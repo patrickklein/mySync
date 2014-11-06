@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 
-namespace MySync.Classes
+namespace My_Sync.Classes
 {
     class NotifyIcon
     {

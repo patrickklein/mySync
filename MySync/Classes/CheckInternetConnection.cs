@@ -5,7 +5,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Net;
 
-namespace MySync.Classes
+namespace My_Sync.Classes
 {
     static class CheckInternetConnection
     {

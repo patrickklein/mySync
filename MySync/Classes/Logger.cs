@@ -7,9 +7,9 @@ using System.Windows;
 using System.IO;
 using System.Diagnostics;
 using System.Reflection;
-using MySync.Properties;
+using My_Sync.Properties;
 
-namespace MySync.Classes
+namespace My_Sync.Classes
 {
     static class Logger
     {

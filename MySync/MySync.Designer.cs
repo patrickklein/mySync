@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace MySync {
+namespace My_Sync {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

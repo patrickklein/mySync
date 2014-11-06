@@ -4,7 +4,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
-namespace MySync.Classes
+namespace My_Sync.Classes
 {
     class MemoryManagement
     {

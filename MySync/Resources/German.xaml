@@ -1,7 +1,12 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib" >
-    
+
+    <system:String x:Key="windowClose">Beenden</system:String>
+    <system:String x:Key="windowMinimize">Minimieren</system:String>
+    <system:String x:Key="windowMaximize">Maximieren</system:String>
+    <system:String x:Key="windowRefresh">Aktualisieren</system:String>
+
     <system:String x:Key="close">Schließen</system:String>
     <system:String x:Key="login">Login</system:String>
     <system:String x:Key="language">Sprache</system:String>
@@ -9,9 +14,14 @@
     <system:String x:Key="english">Englisch</system:String>
 
     <!-- Tab Items -->
-    <system:String x:Key="general">Allgemein</system:String>
-    <system:String x:Key="filter">Dateifilter</system:String>
-    <system:String x:Key="account">Konto</system:String>
-    <system:String x:Key="folder">Ordner</system:String>
-    <system:String x:Key="server">Server</system:String>
+    <system:String x:Key="tabGeneral">Allgemein</system:String>
+    <system:String x:Key="tabFilter">Dateifilter</system:String>
+    <system:String x:Key="tabAccount">Konto</system:String>
+    <system:String x:Key="tabFolder">Ordner</system:String>
+    <system:String x:Key="tabServer">Server</system:String>
+    
+    <!-- Tab Filter -->
+    <system:String x:Key="filterAdd">Hinzufügen</system:String>
+    <system:String x:Key="filterEdit">Bearbeiten</system:String>
+    <system:String x:Key="filterDelete">Entfernen</system:String>
 </ResourceDictionary>

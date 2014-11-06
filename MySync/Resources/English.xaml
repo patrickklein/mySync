@@ -2,6 +2,11 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib" >
 
+    <system:String x:Key="windowClose">Exit</system:String>
+    <system:String x:Key="windowMinimize">Minimize</system:String>
+    <system:String x:Key="windowMaximize">Maximize</system:String>
+    <system:String x:Key="windowRefresh">Refresh</system:String>
+    
     <system:String x:Key="close">Close</system:String>
     <system:String x:Key="login">Login</system:String>
     <system:String x:Key="language">Language</system:String>
@@ -9,9 +14,14 @@
     <system:String x:Key="english">English</system:String>
 
     <!-- Tab Items -->
-    <system:String x:Key="general">General</system:String>
-    <system:String x:Key="filter">File filter</system:String>
-    <system:String x:Key="account">Account</system:String>
-    <system:String x:Key="folder">Folder</system:String>
-    <system:String x:Key="server">Server</system:String>
+    <system:String x:Key="tabGeneral">General</system:String>
+    <system:String x:Key="tabFilter">File filter</system:String>
+    <system:String x:Key="tabAccount">Account</system:String>
+    <system:String x:Key="tabFolder">Folder</system:String>
+    <system:String x:Key="tabServer">Server</system:String>
+
+    <!-- Tab Filter -->
+    <system:String x:Key="filterAdd">Add</system:String>
+    <system:String x:Key="filterEdit">edit</system:String>
+    <system:String x:Key="filterDelete">Delete</system:String>
 </ResourceDictionary>

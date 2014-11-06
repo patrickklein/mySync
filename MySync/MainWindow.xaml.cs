@@ -1,4 +1,4 @@
-﻿using MySync.Classes;
+﻿using My_Sync.Classes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace MySync
+namespace My_Sync
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -28,6 +28,7 @@ namespace MySync
 
             InitializeComponent();
             InitializeObjects();
+
             //CheckInternetConnection.IsConnected();
 
             Logger.WriteFooter();
@@ -71,6 +72,68 @@ namespace MySync
             this.Resources.MergedDictionaries.Add(dict);
 
             Logger.WriteFooter();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            var desktopWorkingArea = System.Windows.SystemParameters.WorkArea;
+            this.Left = desktopWorkingArea.Right - this.Width;
+            this.Top = desktopWorkingArea.Bottom - this.Height;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FilterBTNAddTerm_Click(object sender, RoutedEventArgs e)
+        {
+            if (FilterTBTerm.Text.Trim() != "" && !FilterLVFilter.Items.Contains(FilterTBTerm.Text.Trim()))
+            {
+                int index = FilterLVFilter.SelectedIndex;
+                if (index >= 0) FilterLVFilter.Items[index] = FilterTBTerm.Text.Trim();
+                else FilterLVFilter.Items.Add(FilterTBTerm.Text.Trim());
+                FilterTBTerm.Text = "";
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FilterBTNEditTerm_Click(object sender, RoutedEventArgs e)
+        {
+            int index = FilterLVFilter.SelectedIndex;
+            if (index >= 0)
+                FilterTBTerm.Text = FilterLVFilter.Items[index].ToString();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FilterBTNDeleteTerm_Click(object sender, RoutedEventArgs e)
+        {
+            int index = FilterLVFilter.SelectedIndex;
+            if (index >= 0) FilterLVFilter.Items.RemoveAt(index);
+            FilterLVFilter.SelectedIndex = index;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void WindowBTNClose(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }
