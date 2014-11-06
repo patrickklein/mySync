@@ -1,0 +1,21 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="MySync" GeneratedClassName="MySync">
+  <Profiles />
+  <Settings>
+    <Setting Name="logPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Code\Log</Value>
+    </Setting>
+    <Setting Name="logState" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="username" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="password" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="usedLanguage" Type="System.String" Scope="User">
+      <Value Profile="(Default)">de-AT</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

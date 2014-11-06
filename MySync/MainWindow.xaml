@@ -1,0 +1,86 @@
+﻿<Window x:Class="MySync.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="mySync" 
+        Height="350" Width="525">
+
+    <Window.Resources>
+        <sys:Double x:Key="ItemWidth">55</sys:Double>
+        <sys:Double x:Key="ImageSize">32</sys:Double>
+        
+        <Style TargetType="{x:Type TabItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TabItem}">
+                        <Grid>
+                            <Border Name="Border" Background="GhostWhite" BorderBrush="Black" BorderThickness="0.5,0.5,0.5,0.5" CornerRadius="3,3,0,0" >
+                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="12,5,12,5"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="GhostWhite" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="Border" Property="Background" Value="LightGray" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <TabControl Height="Auto" Width="Auto" Margin="2">
+            <TabItem x:Name="tabGeneral">
+                <TabItem.Header>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Width="{StaticResource ItemWidth}">
+                        <Image Source="Images/Tabs/general.png" Height="{StaticResource ImageSize}" Width="{StaticResource ImageSize}" />
+                        <TextBlock Text="{DynamicResource general}" Margin="2,0,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <Label Content="Label" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Padding="10" Text="{DynamicResource language}"/>
+                </Grid>
+            </TabItem>
+            <!--<TabItem x:Name="tabAccount">
+                <TabItem.Header>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Width="{StaticResource ItemWidth}">
+                        <Image Source="Images/Tabs/account.png" Height="{StaticResource ImageSize}" Width="{StaticResource ImageSize}" />
+                        <TextBlock Text="{DynamicResource account}" Margin="2,0,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>-->
+            <TabItem x:Name="tabFolder">
+                <TabItem.Header>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Width="{StaticResource ItemWidth}">
+                        <Image Source="Images/Tabs/folder.png" Height="{StaticResource ImageSize}" Width="{StaticResource ImageSize}" />
+                        <TextBlock Text="{DynamicResource folder}" Margin="2,0,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+            <TabItem x:Name="tabServer">
+            <TabItem.Header>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Width="{StaticResource ItemWidth}">
+                        <Image Source="Images/Tabs/server.png" Height="{StaticResource ImageSize}" Width="{StaticResource ImageSize}" />
+                    <TextBlock Text="{DynamicResource server}" Margin="2,0,0,0" HorizontalAlignment="Center" />
+                </StackPanel>
+            </TabItem.Header>
+            <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+            <TabItem x:Name="tabFilter">
+                <TabItem.Header>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Width="{StaticResource ItemWidth}">
+                        <Image Source="Images/Tabs/filter.png" Height="{StaticResource ImageSize}" Width="{StaticResource ImageSize}" />
+                        <TextBlock Text="{DynamicResource filter}" Margin="2,0,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
