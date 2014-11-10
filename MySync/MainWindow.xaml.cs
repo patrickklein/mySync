@@ -52,12 +52,15 @@ namespace My_Sync
         /// <summary>
         /// Method to define the current language resource file
         /// </summary>
+        /// <param name="cultureCode">Saved cultureCode coming from the user settings</param>
         private void SetLanguageDictionary(string cultureCode = "")
         {
             Logger.WriteHeader();
 
             ResourceDictionary dict = new ResourceDictionary();
-            switch (Thread.CurrentThread.CurrentCulture.ToString())
+            cultureCode = (cultureCode == "") ? Thread.CurrentThread.CurrentCulture.ToString() : cultureCode;
+
+            switch (cultureCode)
             {
                 case "de-AT":
                     dict.Source = new Uri("..\\Resources\\German.xaml", UriKind.Relative);
@@ -81,10 +84,13 @@ namespace My_Sync
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var desktopWorkingArea = System.Windows.SystemParameters.WorkArea;
-            this.Left = desktopWorkingArea.Right - this.Width;
-            this.Top = desktopWorkingArea.Bottom - this.Height;
+            this.Left = SystemParameters.WorkArea.Right - this.Width;
+            this.Top = SystemParameters.WorkArea.Bottom - this.Height;
         }
+
+        #region Eventhandler
+
+        #region Filter Tab
 
         /// <summary>
         /// 
@@ -126,6 +132,8 @@ namespace My_Sync
             FilterLVFilter.SelectedIndex = index;
         }
 
+        #endregion
+
         /// <summary>
         /// 
         /// </summary>
@@ -133,7 +141,11 @@ namespace My_Sync
         /// <param name="e"></param>
         private void WindowBTNClose(object sender, RoutedEventArgs e)
         {
+            //FolderIcon.SetFolderIcon("C:\\Test");
+            //FolderIcon.ResetFolderIcon("C:\\Test");
             Close();
         }
+
+        #endregion
     }
 }
