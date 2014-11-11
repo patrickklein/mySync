@@ -22,6 +22,8 @@ namespace My_Sync
     /// </summary>
     public partial class MainWindow : Window
     {
+        public string applicationName = "MySync";
+
         public MainWindow()
         {
             Logger.WriteHeader();
@@ -30,6 +32,7 @@ namespace My_Sync
             InitializeObjects();
 
             //CheckInternetConnection.IsConnected();
+            FolderManagement.CreateSyncFolder();
 
             Logger.WriteFooter();
         }
@@ -141,8 +144,9 @@ namespace My_Sync
         /// <param name="e"></param>
         private void WindowBTNClose(object sender, RoutedEventArgs e)
         {
-            //FolderIcon.SetFolderIcon("C:\\Test");
-            //FolderIcon.ResetFolderIcon("C:\\Test");
+            //FolderManagement.SetFolderIcon("C:\\Test");
+            //FolderManagement.ResetFolderIcon("C:\\Test");
+            FolderManagement.DeleteShortcut();
             Close();
         }
 

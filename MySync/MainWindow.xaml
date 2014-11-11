@@ -8,7 +8,8 @@
         AllowsTransparency="True" 
         WindowStyle="None"
         Background="Transparent"
-        Height="350" Width="525" >
+        Height="350" Width="525" 
+        Icon="Images/icon.ico" >
 
     <Window.Resources>
         <sys:Double x:Key="ItemWidth">55</sys:Double>

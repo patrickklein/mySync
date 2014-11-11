@@ -46,9 +46,9 @@ namespace My_Sync.Classes
             contextMenu.MenuItems.AddRange(new MenuItem[] { menuItem0, menuItem1, menuItem2 });
 
             notifyIcon = new System.Windows.Forms.NotifyIcon(new Container());
-            notifyIcon.Text = "MySync";
-            //Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("/MySync;component/favicon.ico", UriKind.Relative)).Stream;
-            //notifyIcon.Icon = new Icon(iconStream);
+            notifyIcon.Text = mainWindow.applicationName;
+            Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("/My Sync;component/Images/icon.ico", UriKind.Relative)).Stream;
+            notifyIcon.Icon = new Icon(iconStream);
             notifyIcon.Visible = true;
             notifyIcon.ContextMenu = contextMenu;
             notifyIcon.DoubleClick += new EventHandler(NotifyIcon_DoubleClick);
