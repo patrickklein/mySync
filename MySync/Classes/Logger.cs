@@ -11,38 +11,58 @@ using My_Sync.Properties;
 
 namespace My_Sync.Classes
 {
-    static class Logger
+    class Logger : IDisposable
     {
+        private string className, methodName;
         private static StreamWriter file;
 
-        private static void Initialize()
+        /// <summary>
+        /// Creates a Logfile in the path defined in the user settings and opens an active StreamWriter
+        /// </summary>
+        private void Initialize()
         {
-            if (file == null && MySync.Default.logState)
+            string path = (MySync.Default.logPath != "") ? MySync.Default.logPath : ".\\";
+            string fullPath = Path.Combine(path, "Log.txt");
+            file = new StreamWriter(fullPath);
+        }
+
+        /// <summary>
+        /// Creates a log entry for entering a method/function
+        /// </summary>
+        /// <param name="args">parameters of the called method/function</param>
+        public Logger(params object [] args)
+        {
+            if (!MySync.Default.logState) return;
+            if (file == null) Initialize();
+
+            this.className = new StackTrace().GetFrame(1).GetMethod().DeclaringType.Name;
+            this.methodName = new StackTrace().GetFrame(1).GetMethod().Name;
+
+            string message = String.Format("--> '{0}.{1}'", this.className.Trim(), this.methodName.Trim());
+            Log(message);
+
+            int i = 0;
+            foreach (var a in args)
             {
-                string pfad = (MySync.Default.logPath != "") ? MySync.Default.logPath : ".\\";
-                file = new StreamWriter(pfad.TrimEnd('/', '\\') + "\\Log.txt");
+                Log(String.Format("\t\targ[{0}] = '{1}'", i, a));
+                i++;
             }
         }
 
-        public static void WriteHeader()
+        /// <summary>
+        /// Creates a log entry for exitting a method/function
+        /// </summary>
+        public void Dispose()
         {
-            string className = new StackTrace().GetFrame(1).GetMethod().DeclaringType.Name;
-            string methodName = new StackTrace().GetFrame(1).GetMethod().Name;
-
-            string message = String.Format("--> '{0}.{1}'", className.Trim(), methodName.Trim());
+            string message = String.Format("<-- '{0}.{1}'", this.className.Trim(), this.methodName.Trim());
             Log(message);
         }
 
-        public static void WriteFooter()
-        {
-            string className = new StackTrace().GetFrame(1).GetMethod().DeclaringType.Name;
-            string methodName = new StackTrace().GetFrame(1).GetMethod().Name;
-
-            string message = String.Format("<-- '{0}.{1}'", className.Trim(), methodName.Trim());
-            Log(message);
-        }
-
-        public static void Log(string message)
+        /// <summary>
+        /// Creates the log entry in the log file (double checks availability of the logfile and if logging is wanted)
+        /// </summary>
+        /// <param name="message">defines the message, which is going to be logged</param>
+        private void Log(string message)
         {
             string finalMessage = String.Format("[{0:dd/MM/yyyy HH:mm:ss}]: {1}", DateTime.Now, message);
 
