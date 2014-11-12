@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -24,30 +25,37 @@ namespace My_Sync.Classes
             using (new Logger())
             {
                 mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
 
                 MenuItem menuItem0 = new MenuItem();
                 menuItem0.Index = 0;
-                menuItem0.Text = "Synchronize folders";
+                menuItem0.Text = dict["menuSynchronize"].ToString();
                 menuItem0.Enabled = false;
                 menuItem0.Click += new System.EventHandler(NotifyIconSync_Click);
 
                 MenuItem menuItem1 = new MenuItem();
-                menuItem1.Index = 0;
-                menuItem1.Text = "Öffnen";
-                menuItem1.Click += new System.EventHandler(NotifyIconOpen_Click);
+                menuItem1.Index = 1;
+                menuItem1.Text = dict["menuSettings"].ToString();
+                //menuItem1.Click += new System.EventHandler(NotifyIconOpen_Click);
 
                 MenuItem menuItem2 = new MenuItem();
-                menuItem2.Index = 1;
-                menuItem2.Text = "Beenden";
-                menuItem2.Click += new EventHandler(NotifyIconExit_Click);
+                menuItem2.Index = 2;
+                menuItem2.Text = dict["menuOpen"].ToString();
+                menuItem2.Click += new System.EventHandler(NotifyIconOpen_Click);
+
+                MenuItem menuItem3 = new MenuItem();
+                menuItem3.Index = 3;
+                menuItem3.Text = dict["menuClose"].ToString();
+                menuItem3.Click += new EventHandler(NotifyIconExit_Click);
 
                 //Initialize contextMenu
                 ContextMenu contextMenu = new ContextMenu();
-                contextMenu.MenuItems.AddRange(new MenuItem[] { menuItem0, menuItem1, menuItem2 });
+                contextMenu.MenuItems.AddRange(new MenuItem[] { menuItem0, menuItem1, menuItem2, menuItem3 });
 
                 notifyIcon = new System.Windows.Forms.NotifyIcon(new Container());
                 notifyIcon.Text = mainWindow.applicationName;
-                Stream iconStream = System.Windows.Application.GetResourceStream(new Uri("/My Sync;component/Images/icon.ico", UriKind.Relative)).Stream;
+                string uri = String.Format("/{0};component/Images/icon.ico", Assembly.GetExecutingAssembly().GetName().Name);
+                Stream iconStream = System.Windows.Application.GetResourceStream(new Uri(uri, UriKind.Relative)).Stream;
                 notifyIcon.Icon = new Icon(iconStream);
                 notifyIcon.Visible = true;
                 notifyIcon.ContextMenu = contextMenu;

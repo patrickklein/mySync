@@ -86,6 +86,7 @@
     </Compile>
     <Compile Include="Classes\CheckInternetConnection.cs" />
     <Compile Include="Classes\FolderManagement.cs" />
+    <Compile Include="Classes\Helper.cs" />
     <Compile Include="Classes\Logger.cs" />
     <Compile Include="Classes\MemoryManagement.cs" />
     <Compile Include="Classes\NotifyIcon.cs" />
@@ -124,6 +125,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <None Include="MySync.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -170,6 +172,15 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\ServerType\work.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\ServerType\school.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\ServerType\home.gif" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />

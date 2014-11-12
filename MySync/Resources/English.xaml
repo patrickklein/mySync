@@ -13,6 +13,12 @@
     <system:String x:Key="german">German</system:String>
     <system:String x:Key="english">English</system:String>
 
+    <!-- Contextmenu Items -->
+    <system:String x:Key="menuSynchronize">Start synchronization</system:String>
+    <system:String x:Key="menuOpen">Open synchronization folder</system:String>
+    <system:String x:Key="menuSettings">Preferences</system:String>
+    <system:String x:Key="menuClose">Close MySync</system:String>
+    
     <!-- Tab Items -->
     <system:String x:Key="tabGeneral">General</system:String>
     <system:String x:Key="tabFilter">File filter</system:String>

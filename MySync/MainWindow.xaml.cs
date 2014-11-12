@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,8 +34,30 @@ namespace My_Sync
                 InitializeObjects();
 
                 //CheckInternetConnection.IsConnected();
-                FolderManagement.CreateSyncFolder();
+                //FolderManagement.CreateSyncFolder();
                 //FolderManagement.CreateShortcut("test", @"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Code\Log\FolderDelete");
+
+                List<SynchronizationPoint> points = new List<SynchronizationPoint>();
+
+                SynchronizationPoint point = new SynchronizationPoint();
+                point.ServerType = point.GetImageOfAssembly("work.gif");
+                point.Description = "FH Technikum Wien";
+                point.Server = "http://172.123.145.90/mySync";
+                points.Add(point);
+
+                point = new SynchronizationPoint();
+                point.ServerType = point.GetImageOfAssembly("home.gif");
+                point.Description = "Home";
+                point.Server = "http://home.me/mySync";
+                points.Add(point);
+
+                point = new SynchronizationPoint();
+                point.ServerType = point.GetImageOfAssembly("school.gif");
+                point.Description = "school";
+                point.Server = "http://school.me/mySync";
+                points.Add(point);
+
+                ServerDGSynchronizationPoints.ItemsSource = points;
             }
         }
 
@@ -135,6 +158,29 @@ namespace My_Sync
 
         #endregion
 
+        #region Server Tab 
+
+        /// <summary>
+        /// Generates the datagrid columns and adds the chosen servertype images
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void ServerDGSynchronizationPoints_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                if (e.PropertyName != "ServerType") return;
+                e.Cancel = true;
+                
+                DataGridTemplateColumn imageObject = FindResource("serverTypeTemplate") as DataGridTemplateColumn;
+                if (imageObject == null) return;
+                
+                ServerDGSynchronizationPoints.Columns.Add(imageObject);
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Exits the application
         /// </summary>
@@ -147,7 +193,7 @@ namespace My_Sync
                 //FolderManagement.SetFolderIcon("C:\\Test");
                 //FolderManagement.ResetFolderIcon("C:\\Test");
                 //FolderManagement.DeleteShortcut();
-                FolderManagement.DeleteSyncFolder(false);
+                //FolderManagement.DeleteSyncFolder(false);
             }
 
             Close();
@@ -169,4 +215,6 @@ namespace My_Sync
 
         #endregion
     }
+
+
 }
