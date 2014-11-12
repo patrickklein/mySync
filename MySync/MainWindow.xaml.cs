@@ -34,6 +34,7 @@ namespace My_Sync
 
                 //CheckInternetConnection.IsConnected();
                 FolderManagement.CreateSyncFolder();
+                //FolderManagement.CreateShortcut("test", @"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Code\Log\FolderDelete");
             }
         }
 
@@ -145,7 +146,8 @@ namespace My_Sync
             {
                 //FolderManagement.SetFolderIcon("C:\\Test");
                 //FolderManagement.ResetFolderIcon("C:\\Test");
-                FolderManagement.DeleteShortcut();
+                //FolderManagement.DeleteShortcut();
+                FolderManagement.DeleteSyncFolder(false);
             }
 
             Close();
