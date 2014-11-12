@@ -17,5 +17,8 @@
     <Setting Name="usedLanguage" Type="System.String" Scope="User">
       <Value Profile="(Default)">de-AT</Value>
     </Setting>
+    <Setting Name="mainFolder" Type="System.String" Scope="User">
+      <Value Profile="(Default)">MySync</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

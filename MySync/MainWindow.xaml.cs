@@ -44,7 +44,7 @@ namespace My_Sync
         {
             using (new Logger())
             {
-                SetLanguageDictionary();
+                SetLanguageDictionary(MySync.Default.usedLanguage);
 
                 NotifyIcon notifyIcon = new NotifyIcon();
                 notifyIcon.InitializeNotifyIcon();
@@ -74,6 +74,7 @@ namespace My_Sync
                         dict.Source = new Uri("..\\Resources\\English.xaml", UriKind.Relative);
                         break;
                 }
+
                 this.Resources.MergedDictionaries.Add(dict);
             }
         }

@@ -82,5 +82,17 @@ namespace My_Sync {
                 this["usedLanguage"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("MySync")]
+        public string mainFolder {
+            get {
+                return ((string)(this["mainFolder"]));
+            }
+            set {
+                this["mainFolder"] = value;
+            }
+        }
     }
 }
