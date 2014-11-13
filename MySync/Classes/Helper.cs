@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 
 namespace My_Sync.Classes
@@ -14,6 +15,7 @@ namespace My_Sync.Classes
     {
         private Image serverType;
         private string description = "";
+        private string folder = "";
         private string server = "";
 
         #region Getter / Setter
@@ -24,16 +26,22 @@ namespace My_Sync.Classes
             set { serverType = value; }
         }
 
-        public string Server
-        {
-            get { return server; }
-            set { server = value; }
-        }
-
         public string Description
         {
             get { return description; }
             set { description = value; }
+        }
+
+        public string Folder
+        {
+            get { return folder; }
+            set { folder = value; }
+        }
+
+        public string Server
+        {
+            get { return server; }
+            set { server = value; }
         }
 
         #endregion
@@ -42,14 +50,15 @@ namespace My_Sync.Classes
         /// Gets the image (embedded resource) of the given filename
         /// </summary>
         /// <param name="imageName">image which should get retrieved</param>
+        /// <param name="extension">file extension of the image resource</param>
         /// <param name="size">sets the size (width & height) of the image</param>
         /// <returns>image object containing the image of the resources</returns>
-        public Image GetImageOfAssembly(string imageName, int size = 7)
+        public Image GetImageOfAssembly(string imageName, string extension = ".png", int size = 7)
         {
-            using (new Logger(imageName, size))
+            using (new Logger(imageName, extension, size))
             {
-                MainWindow mainWindow = ((MainWindow)Application.Current.MainWindow);
-                string resourceString = String.Format("{0}.Images.ServerType.{1}", mainWindow.GetType().Namespace, imageName);
+                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                string resourceString = String.Format("{0}.Images.ServerType.{1}{2}", mainWindow.GetType().Namespace, imageName, extension);
 
                 Image image = new Image { Margin = new Thickness(1), Width = size, Height = size };
                 BitmapImage bi = new BitmapImage();
@@ -60,5 +69,24 @@ namespace My_Sync.Classes
                 return image;
             }
         } 
+    }
+
+    public class FolderBrowserWindow : IWin32Window
+    {
+        IntPtr _handle;
+
+        #region Getter / Setter
+
+        IntPtr IWin32Window.Handle
+        {
+            get { return _handle; }
+        }
+
+        #endregion
+
+        public FolderBrowserWindow(IntPtr handle)
+        {
+            _handle = handle;
+        }
     }
 }

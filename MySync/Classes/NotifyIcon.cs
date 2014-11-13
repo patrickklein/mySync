@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -59,6 +60,7 @@ namespace My_Sync.Classes
                 notifyIcon.Icon = new Icon(iconStream);
                 notifyIcon.Visible = true;
                 notifyIcon.ContextMenu = contextMenu;
+                notifyIcon.Click += new EventHandler(NotifyIcon_Click);
                 notifyIcon.DoubleClick += new EventHandler(NotifyIcon_DoubleClick);
                 notifyIcon.BalloonTipClicked += new EventHandler(NotifyIcon_BalloonTipClicked);
             }
@@ -72,6 +74,21 @@ namespace My_Sync.Classes
         /// <param name="sender">event sender</param>
         /// <param name="e">event arguments</param>
         private void NotifyIcon_DoubleClick(object sender, EventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                string folderpath = FolderManagement.GetFavoriteFolder();
+                if (Directory.Exists(folderpath))
+                    Process.Start("explorer.exe", folderpath);
+            }
+        }
+
+        /// <summary>
+        /// Event for single-clicking the notification icon (opens the synchronization folder)
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void NotifyIcon_Click(object sender, EventArgs e)
         {
             using (new Logger(sender, e))
             {
@@ -100,7 +117,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(sender, e))
             {
-                NotifyIcon_DoubleClick(null, null);
+                NotifyIcon_Click(sender, e);
             }
         }
 

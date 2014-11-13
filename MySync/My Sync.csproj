@@ -174,13 +174,28 @@
     <Resource Include="Images\icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Images\ServerType\work.gif" />
+    <EmbeddedResource Include="Images\ServerType\type1.png" />
+    <EmbeddedResource Include="Images\ServerType\type10.png" />
+    <EmbeddedResource Include="Images\ServerType\type11.png" />
+    <EmbeddedResource Include="Images\ServerType\type12.png" />
+    <EmbeddedResource Include="Images\ServerType\type13.png" />
+    <EmbeddedResource Include="Images\ServerType\type14.png" />
+    <EmbeddedResource Include="Images\ServerType\type15.png" />
+    <EmbeddedResource Include="Images\ServerType\type16.png" />
+    <EmbeddedResource Include="Images\ServerType\type17.png" />
+    <EmbeddedResource Include="Images\ServerType\type18.png" />
+    <EmbeddedResource Include="Images\ServerType\type19.png" />
+    <EmbeddedResource Include="Images\ServerType\type2.png" />
+    <EmbeddedResource Include="Images\ServerType\type3.png" />
+    <EmbeddedResource Include="Images\ServerType\type4.png" />
+    <EmbeddedResource Include="Images\ServerType\type5.png" />
+    <EmbeddedResource Include="Images\ServerType\type6.png" />
+    <EmbeddedResource Include="Images\ServerType\type7.png" />
+    <EmbeddedResource Include="Images\ServerType\type8.png" />
+    <EmbeddedResource Include="Images\ServerType\type9.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Images\ServerType\school.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Images\ServerType\home.gif" />
+    <Resource Include="Images\Tabs\history.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />

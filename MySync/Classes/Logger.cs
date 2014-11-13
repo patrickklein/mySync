@@ -22,6 +22,8 @@ namespace My_Sync.Classes
         private void Initialize()
         {
             string path = (MySync.Default.logPath != "") ? MySync.Default.logPath : ".\\";
+            Directory.CreateDirectory(path);
+
             string fullPath = Path.Combine(path, "Log.txt");
             file = new StreamWriter(fullPath);
         }
@@ -54,6 +56,7 @@ namespace My_Sync.Classes
         /// </summary>
         public void Dispose()
         {
+            if (!MySync.Default.logState) return;
             string message = String.Format("<-- '{0}.{1}'", this.className.Trim(), this.methodName.Trim());
             Log(message);
         }
@@ -66,12 +69,9 @@ namespace My_Sync.Classes
         {
             string finalMessage = String.Format("[{0:dd/MM/yyyy HH:mm:ss}]: {1}", DateTime.Now, message);
 
-            if (MySync.Default.logState)
-            {
-                if (file == null) Initialize();
-                file.WriteLine(finalMessage);
-                file.Flush();
-            }
+            if (file == null) Initialize();
+            file.WriteLine(finalMessage);
+            file.Flush();
         }
     }
 }

@@ -43,15 +43,27 @@ namespace My_Sync.Classes
         //------------------------------------------------------------------------------------------------//
 
         /// <summary>
+        /// Retrieves the favorite folder of the user
+        /// </summary>
+        /// <returns>favorite folder path</returns>
+        public static string GetFavoriteFolder()
+        {
+            folderName = MySync.Default.mainFolder;
+            favoriteFolder = Environment.ExpandEnvironmentVariables(Path.Combine(@"%USERPROFILE%", folderName));
+            return favoriteFolder;
+        }
+
+        /// <summary>
         /// Creates the root directory for this application for synchronization
         /// creates the folder, changes the folder icon and adds the folder to the user favorites in Windows Explorer
         /// </summary>
-        public static void CreateSyncFolder() 
+        public static void CreateSyncFolder()
         {
             using (new Logger())
             {
                 folderName = MySync.Default.mainFolder;
-                favoriteFolder = Environment.ExpandEnvironmentVariables(Path.Combine(@"%USERPROFILE%", folderName));
+                if (String.IsNullOrEmpty(favoriteFolder)) GetFavoriteFolder();
+
                 Directory.CreateDirectory(favoriteFolder);
 
                 SetFolderIcon(favoriteFolder);
@@ -65,10 +77,14 @@ namespace My_Sync.Classes
         /// <param name="recursive">defines if the folder is deleted recursively</param>
         public static void DeleteSyncFolder(bool recursive = true)
         {
-            using (new Logger())
+            using (new Logger(recursive))
             {
                 folderName = MySync.Default.mainFolder;
                 favoriteFolder = Environment.ExpandEnvironmentVariables(Path.Combine(@"%USERPROFILE%", folderName));
+
+                //Set directory attributes to normal to grant deletion rights
+                DirectoryInfo dirInfo = new DirectoryInfo(favoriteFolder);
+                dirInfo.Attributes = FileAttributes.Normal;
                 Directory.Delete(favoriteFolder, recursive);
             }
         }

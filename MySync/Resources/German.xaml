@@ -19,15 +19,21 @@
     <system:String x:Key="menuSettings">Einstellungen</system:String>
     <system:String x:Key="menuClose">MySync beenden</system:String>
     
-    <!-- Tab Items -->
+    <!-- Tabcontrol Items -->
     <system:String x:Key="tabGeneral">Allgemein</system:String>
     <system:String x:Key="tabFilter">Dateifilter</system:String>
     <system:String x:Key="tabAccount">Konto</system:String>
     <system:String x:Key="tabFolder">Ordner</system:String>
     <system:String x:Key="tabServer">Server</system:String>
+    <system:String x:Key="tabHistory">Ereignislog</system:String>
     
     <!-- Tab Filter -->
     <system:String x:Key="filterAdd">Hinzufügen</system:String>
     <system:String x:Key="filterEdit">Bearbeiten</system:String>
     <system:String x:Key="filterDelete">Entfernen</system:String>
+
+    <!-- Tab Server -->
+    <system:String x:Key="serverDescription">Beschreibung</system:String>
+    <system:String x:Key="serverFolder">Speicherort</system:String>
+    <system:String x:Key="serverEntryPoint">Server Entry Point</system:String>
 </ResourceDictionary>
