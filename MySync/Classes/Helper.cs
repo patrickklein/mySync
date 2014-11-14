@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -11,6 +12,36 @@ using System.Windows.Media.Imaging;
 
 namespace My_Sync.Classes
 {
+    static class Helper
+    {
+        /// <summary>
+        /// Gets the image (embedded resource) of the given filename
+        /// </summary>
+        /// <param name="imageName">image which should get retrieved</param>
+        /// <param name="extension">file extension of the image resource</param>
+        /// <param name="size">sets the size (width & height) of the image</param>
+        /// <returns>image object containing the image of the resources</returns>
+        public static Image GetImageOfAssembly(string imageName, string extension = ".png", int size = 7)
+        {
+            using (new Logger(imageName, extension, size))
+            {
+                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                string resourceString = String.Format("{0}.Images.ServerType.{1}{2}", mainWindow.GetType().Namespace, imageName, extension);
+                Stream imageStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceString);
+
+                if (imageStream == null) return null;
+
+                Image image = new Image { Margin = new Thickness(1), Width = size, Height = size };
+                BitmapImage bi = new BitmapImage();
+                bi.BeginInit();
+                bi.StreamSource = imageStream;
+                bi.EndInit();
+                image.Source = bi;
+                return image;
+            }
+        } 
+    }
+
     class SynchronizationPoint
     {
         private Image serverType;
@@ -45,30 +76,6 @@ namespace My_Sync.Classes
         }
 
         #endregion
-
-        /// <summary>
-        /// Gets the image (embedded resource) of the given filename
-        /// </summary>
-        /// <param name="imageName">image which should get retrieved</param>
-        /// <param name="extension">file extension of the image resource</param>
-        /// <param name="size">sets the size (width & height) of the image</param>
-        /// <returns>image object containing the image of the resources</returns>
-        public Image GetImageOfAssembly(string imageName, string extension = ".png", int size = 7)
-        {
-            using (new Logger(imageName, extension, size))
-            {
-                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
-                string resourceString = String.Format("{0}.Images.ServerType.{1}{2}", mainWindow.GetType().Namespace, imageName, extension);
-
-                Image image = new Image { Margin = new Thickness(1), Width = size, Height = size };
-                BitmapImage bi = new BitmapImage();
-                bi.BeginInit();
-                bi.StreamSource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceString);
-                bi.EndInit();
-                image.Source = bi;
-                return image;
-            }
-        } 
     }
 
     public class FolderBrowserWindow : IWin32Window

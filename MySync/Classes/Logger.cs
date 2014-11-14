@@ -22,7 +22,14 @@ namespace My_Sync.Classes
         private void Initialize()
         {
             string path = (MySync.Default.logPath != "") ? MySync.Default.logPath : ".\\";
-            Directory.CreateDirectory(path);
+            try
+            {
+                Directory.CreateDirectory(path);
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                MessageBox.Show("Defined log path not found. Please correct them.");
+            }
 
             string fullPath = Path.Combine(path, "Log.txt");
             file = new StreamWriter(fullPath);

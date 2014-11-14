@@ -25,6 +25,7 @@ namespace My_Sync
     public partial class MainWindow : Window
     {
         public string applicationName = "MySync";
+        private NotifyIcon notifyIcon;
 
         public MainWindow()
         {
@@ -41,21 +42,21 @@ namespace My_Sync
                 List<SynchronizationPoint> points = new List<SynchronizationPoint>();
 
                 SynchronizationPoint point = new SynchronizationPoint();
-                point.ServerType = point.GetImageOfAssembly("type1");
+                point.ServerType = Helper.GetImageOfAssembly("type1");
                 point.Description = "FH Technikum Wien";
                 point.Folder = @"D:\Studium\MSC - Softwareentwicklung";
                 point.Server = "http://172.123.145.90/mySync";
                 points.Add(point);
 
                 point = new SynchronizationPoint();
-                point.ServerType = point.GetImageOfAssembly("type2");
+                point.ServerType = Helper.GetImageOfAssembly("type2");
                 point.Description = "Home";
                 point.Folder = @"C:\Users\Frank\Home";
                 point.Server = "http://home.me/mySync";
                 points.Add(point);
 
                 point = new SynchronizationPoint();
-                point.ServerType = point.GetImageOfAssembly("type3");
+                point.ServerType = Helper.GetImageOfAssembly("type3");
                 point.Description = "Work";
                 point.Folder = @"D:\Work\ABC Company Inc.";
                 point.Server = "http://school.me/mySync";
@@ -74,7 +75,7 @@ namespace My_Sync
             {
                 SetLanguageDictionary(MySync.Default.usedLanguage);
 
-                NotifyIcon notifyIcon = new NotifyIcon();
+                notifyIcon = new NotifyIcon();
                 notifyIcon.InitializeNotifyIcon();
             }
         }
@@ -86,7 +87,20 @@ namespace My_Sync
         {
             using (new Logger())
             {
-                PopupWindow.Visibility = Visibility.Visible;
+                PopupWindow.Visibility = Visibility.Hidden;
+                PopupTBXDescription.Text = "";
+                PopupTBXFolder.Text = "";
+                PopupTBXServerEntryPoint.Text = "";
+                PopupTBXServerType.Text = "";
+
+                List<Image> imageList = new List<Image>();
+                for (int i = 1; i > 0; i++)
+                {
+                    Image image = Helper.GetImageOfAssembly("type" + i);
+
+                    if (image == null) break;
+                    imageList.Add(image);
+                }
             }
         }
 
@@ -268,6 +282,11 @@ namespace My_Sync
                 if (folderBrowserDialog.SelectedPath.ToString() != "")
                     PopupTBXFolder.Text = folderBrowserDialog.SelectedPath;
             }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            notifyIcon.SetVisibility(false);
         }
     }
 }

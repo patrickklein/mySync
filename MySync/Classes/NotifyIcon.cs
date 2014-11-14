@@ -66,6 +66,11 @@ namespace My_Sync.Classes
             }
         }
 
+        public void SetVisibility(bool visible)
+        {
+            notifyIcon.Visible = visible;
+        }
+
         #region Eventhandler
 
         /// <summary>
