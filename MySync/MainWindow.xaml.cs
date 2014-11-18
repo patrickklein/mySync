@@ -1,6 +1,7 @@
 ﻿using My_Sync.Classes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -186,6 +187,11 @@ namespace My_Sync
 
         #region Server Tab 
 
+        /// <summary>
+        /// Opens a folder browser dialog for choosing the directory which should get be synchronized and adds the chosen path to the related textbox
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void PopupDirButton_Click(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -193,7 +199,8 @@ namespace My_Sync
                 System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
                 HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
                 System.Windows.Forms.IWin32Window win = new FolderBrowserWindow(source.Handle);
-                folderBrowserDialog.Description = "Bitte den Ordner auswählen, in welchem die Bilder liegen.";
+                ResourceDictionary dict = this.Resources.MergedDictionaries.ToList().First();
+                folderBrowserDialog.Description = dict["serverPopupBrowserText"].ToString();
                 folderBrowserDialog.SelectedPath = PopupTBXFolder.Text;
                 folderBrowserDialog.ShowDialog(win);
 
@@ -202,6 +209,11 @@ namespace My_Sync
             }
         }
 
+        /// <summary>
+        /// Opens the server entry point popup for adding a new server entry point
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void ServerBTNAddTerm_Click(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -211,6 +223,11 @@ namespace My_Sync
             }
         }
 
+        /// <summary>
+        /// Deletes the chosen server entry point from the list
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void ServerBTNDeleteTerm_Click(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -227,6 +244,11 @@ namespace My_Sync
             }
         }
 
+        /// <summary>
+        /// Closes the server popup window
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void ClosePopup_Click(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -235,6 +257,11 @@ namespace My_Sync
             }
         }
 
+        /// <summary>
+        /// Checks if all fields are correctly filled out and creates a new server entry point
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void CreateNewServerEntryPoint_Click(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -350,6 +377,11 @@ namespace My_Sync
 
         #endregion
 
+        /// <summary>
+        /// Validates the given condition and colors the label red (false) or black (true)
+        /// </summary>
+        /// <param name="guiLabel">label element which got validated</param>
+        /// <param name="condition">defines in which color the label get painted</param>
         private bool ValidateGUIElement(TextBlock guiLabel, bool condition)
         {
             using (new Logger(guiLabel, condition))
@@ -361,7 +393,12 @@ namespace My_Sync
             return condition;
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        /// <summary>
+        /// Disposes the notification icon if application is closing (if not the icon stays in the windows statusbar)
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
             using (new Logger(sender, e))
             {

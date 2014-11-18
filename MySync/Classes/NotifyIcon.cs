@@ -66,6 +66,10 @@ namespace My_Sync.Classes
             }
         }
 
+        /// <summary>
+        /// Defines if the notification icon should be visible or not
+        /// </summary>
+        /// <param name="visible">true/false</param>
         public void SetVisibility(bool visible)
         {
             notifyIcon.Visible = visible;

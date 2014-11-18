@@ -79,6 +79,10 @@ namespace My_Sync.Classes
 
         #endregion
 
+        /// <summary>
+        /// Gets all needed file attributes for the given file
+        /// </summary>
+        /// <param name="filename">file for gathering the file attributes</param>
         public void GetFileInfo(string filename)
         {
             using (new Logger(filename))
@@ -95,6 +99,10 @@ namespace My_Sync.Classes
             }
         }
 
+        /// <summary>
+        /// Gets all needed directory attributes for the given path
+        /// </summary>
+        /// <param name="path">path or gathering the directory attributes</param>
         public void GetDirectoryInfo(string path)
         {
             using (new Logger(path))

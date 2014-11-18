@@ -27,13 +27,26 @@
     <system:String x:Key="tabServer">Server</system:String>
     <system:String x:Key="tabHistory">History</system:String>
 
+    <!-- Tab General -->
+    <system:String x:Key="generalLanguage">Language:</system:String>
+    
     <!-- Tab Filter -->
     <system:String x:Key="filterAdd">Add</system:String>
     <system:String x:Key="filterEdit">edit</system:String>
     <system:String x:Key="filterDelete">Delete</system:String>
 
     <!-- Tab Server -->
+    <system:String x:Key="serverAdd">+</system:String>
+    <system:String x:Key="serverDelete">-</system:String>
     <system:String x:Key="serverDescription">Description</system:String>
     <system:String x:Key="serverFolder">Syncronization Directory</system:String>
     <system:String x:Key="serverEntryPoint">Server Entry Point</system:String>
+
+    <system:String x:Key="serverPopupTitle">Create a new synchronization point</system:String>
+    <system:String x:Key="serverPopupCreateButton">Save as new synchronization point</system:String>
+    <system:String x:Key="serverPopupBrowserText">Please choose the directory which should get synchronized with your server.</system:String>
+    <system:String x:Key="serverPopupServerType">Server Type:</system:String>
+    <system:String x:Key="serverPopupDescription">Description:</system:String>
+    <system:String x:Key="serverPopupDirectory">Directory:</system:String>
+    <system:String x:Key="serverPopupServerAddress">Server Address:</system:String>
 </ResourceDictionary>
