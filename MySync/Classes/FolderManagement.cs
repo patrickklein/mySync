@@ -83,9 +83,12 @@ namespace My_Sync.Classes
                 favoriteFolder = Environment.ExpandEnvironmentVariables(Path.Combine(@"%USERPROFILE%", folderName));
 
                 //Set directory attributes to normal to grant deletion rights
-                DirectoryInfo dirInfo = new DirectoryInfo(favoriteFolder);
-                dirInfo.Attributes = FileAttributes.Normal;
-                Directory.Delete(favoriteFolder, recursive);
+                if (Directory.Exists(favoriteFolder))
+                {
+                    DirectoryInfo dirInfo = new DirectoryInfo(favoriteFolder);
+                    dirInfo.Attributes = FileAttributes.Normal;
+                    Directory.Delete(favoriteFolder, recursive);
+                }
             }
         }
 

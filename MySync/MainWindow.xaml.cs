@@ -1,6 +1,7 @@
 ﻿using My_Sync.Classes;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -26,6 +27,7 @@ namespace My_Sync
     {
         public string applicationName = "MySync";
         private NotifyIcon notifyIcon;
+        private List<SynchronizationPoint> serverPoints = new List<SynchronizationPoint>();
 
         public MainWindow()
         {
@@ -39,30 +41,32 @@ namespace My_Sync
                 FolderManagement.CreateSyncFolder();
                 FolderManagement.CreateShortcut("test", @"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Code\Log\FolderDelete");
 
-                List<SynchronizationPoint> points = new List<SynchronizationPoint>();
-
                 SynchronizationPoint point = new SynchronizationPoint();
                 point.ServerType = Helper.GetImageOfAssembly("type1");
                 point.Description = "FH Technikum Wien";
                 point.Folder = @"D:\Studium\MSC - Softwareentwicklung";
                 point.Server = "http://172.123.145.90/mySync";
-                points.Add(point);
+                serverPoints.Add(point);
 
                 point = new SynchronizationPoint();
                 point.ServerType = Helper.GetImageOfAssembly("type2");
                 point.Description = "Home";
                 point.Folder = @"C:\Users\Frank\Home";
                 point.Server = "http://home.me/mySync";
-                points.Add(point);
+                serverPoints.Add(point);
 
                 point = new SynchronizationPoint();
                 point.ServerType = Helper.GetImageOfAssembly("type3");
                 point.Description = "Work";
                 point.Folder = @"D:\Work\ABC Company Inc.";
                 point.Server = "http://school.me/mySync";
-                points.Add(point);
+                serverPoints.Add(point);
 
-                ServerDGSynchronizationPoints.ItemsSource = points;
+                ServerDGSynchronizationPoints.ItemsSource = serverPoints;
+
+                //SyncItemInfo temp = new SyncItemInfo();
+                //temp.GetFileInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Zeitaufzeichnung.xlsx");
+                //temp.GetDirectoryInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\");
             }
         }
 
@@ -88,19 +92,33 @@ namespace My_Sync
             using (new Logger())
             {
                 PopupWindow.Visibility = Visibility.Hidden;
+
+                //Label Color
+                PopupTBLServerType.Foreground = Brushes.Black;
+                PopupTBLDescription.Foreground = Brushes.Black;
+                PopupTBLFolder.Foreground = Brushes.Black;
+                PopupTBLServerEntryPoint.Foreground = Brushes.Black;
+
+                //Input fields
                 PopupTBXDescription.Text = "";
                 PopupTBXFolder.Text = "";
                 PopupTBXServerEntryPoint.Text = "";
                 PopupTBXServerType.Text = "";
 
-                List<Image> imageList = new List<Image>();
+                List<ServerTypeImage> imageList = new List<ServerTypeImage>();
                 for (int i = 1; i > 0; i++)
                 {
-                    Image image = Helper.GetImageOfAssembly("type" + i);
-
+                    BitmapImage image = Helper.GetBitmapImageOfAssembly("type" + i);
+                    
                     if (image == null) break;
-                    imageList.Add(image);
+                    ServerTypeImage type = new ServerTypeImage();
+                    type.Id = i;
+                    type.Image = image;
+                    type.ServerType = "type" + i;
+                    imageList.Add(type);
                 }
+
+                PopupTBXServerType.ItemsSource = imageList;
             }
         }
 
@@ -150,21 +168,6 @@ namespace My_Sync
         }
 
         /// <summary>
-        /// adds the chosen filter to the textbox for editing
-        /// </summary>
-        /// <param name="sender">event sender</param>
-        /// <param name="e">event arguments</param>
-        private void FilterBTNEditTerm_Click(object sender, RoutedEventArgs e)
-        {
-            using (new Logger(sender, e))
-            {
-                int index = FilterLVFilter.SelectedIndex;
-                if (index >= 0)
-                    FilterTBTerm.Text = FilterLVFilter.Items[index].ToString();
-            }
-        }
-
-        /// <summary>
         /// deletes the chosen filter from the list
         /// </summary>
         /// <param name="sender">event sender</param>
@@ -183,6 +186,84 @@ namespace My_Sync
 
         #region Server Tab 
 
+        private void PopupDirButton_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+                HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+                System.Windows.Forms.IWin32Window win = new FolderBrowserWindow(source.Handle);
+                folderBrowserDialog.Description = "Bitte den Ordner auswählen, in welchem die Bilder liegen.";
+                folderBrowserDialog.SelectedPath = PopupTBXFolder.Text;
+                folderBrowserDialog.ShowDialog(win);
+
+                if (folderBrowserDialog.SelectedPath.ToString() != "")
+                    PopupTBXFolder.Text = folderBrowserDialog.SelectedPath;
+            }
+        }
+
+        private void ServerBTNAddTerm_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                InitializePopup();
+                PopupWindow.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void ServerBTNDeleteTerm_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                int index = ServerDGSynchronizationPoints.SelectedIndex;
+                if (index == -1) return;
+
+                SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
+                serverPoints.RemoveAt(serverPoints.IndexOf(selectedSyncPoint));
+
+                ServerDGSynchronizationPoints.ItemsSource = null;
+                ServerDGSynchronizationPoints.ItemsSource = serverPoints;
+                ServerDGSynchronizationPoints.Items.Refresh();
+            }
+        }
+
+        private void ClosePopup_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                InitializePopup();
+            }
+        }
+
+        private void CreateNewServerEntryPoint_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                //Validate inputs
+                List<bool> error = new List<bool>();
+                error.Add(ValidateGUIElement(PopupTBLServerType, (PopupTBXServerType.SelectedIndex != -1)));
+                error.Add(ValidateGUIElement(PopupTBLDescription, !String.IsNullOrEmpty(PopupTBXDescription.Text.Trim())));
+                error.Add(ValidateGUIElement(PopupTBLFolder, Directory.Exists(PopupTBXFolder.Text.Trim())));
+                error.Add(ValidateGUIElement(PopupTBLServerEntryPoint, !String.IsNullOrEmpty(PopupTBXServerEntryPoint.Text.Trim())));
+
+                if (error.Contains(false)) return;
+
+                //Add new server entry point
+                SynchronizationPoint point = new SynchronizationPoint();
+                point.ServerType = Helper.GetImageOfAssembly("type" + ((ServerTypeImage)PopupTBXServerType.SelectedItem).Id);
+                point.Description = PopupTBXDescription.Text.Trim();
+                point.Folder = PopupTBXFolder.Text.Trim();
+                point.Server = PopupTBXServerEntryPoint.Text.Trim();
+                serverPoints.Add(point);
+
+                ServerDGSynchronizationPoints.ItemsSource = serverPoints;
+                ServerDGSynchronizationPoints.Items.Refresh();
+
+                //Close popup window
+                ClosePopup_Click(sender, e);
+            }
+        }
+
         /// <summary>
         /// Generates the datagrid columns and adds the chosen servertype images
         /// </summary>
@@ -198,7 +279,8 @@ namespace My_Sync
                 DataGridTemplateColumn imageObject = FindResource("serverTypeTemplate") as DataGridTemplateColumn;
                 if (imageObject == null) return;
                 
-                ServerDGSynchronizationPoints.Columns.Add(imageObject);
+                if(!ServerDGSynchronizationPoints.Columns.Contains(imageObject))
+                    ServerDGSynchronizationPoints.Columns.Add(imageObject);
             }
         }
 
@@ -268,25 +350,23 @@ namespace My_Sync
 
         #endregion
 
-        private void PopupDirButton_Click(object sender, RoutedEventArgs e)
+        private bool ValidateGUIElement(TextBlock guiLabel, bool condition)
         {
-            using (new Logger(sender, e))
+            using (new Logger(guiLabel, condition))
             {
-                System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-                HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
-                System.Windows.Forms.IWin32Window win = new FolderBrowserWindow(source.Handle);
-                folderBrowserDialog.Description = "Bitte den Ordner auswählen, in welchem die Bilder liegen.";
-                folderBrowserDialog.SelectedPath = PopupTBXFolder.Text;
-                folderBrowserDialog.ShowDialog(win);
-
-                if (folderBrowserDialog.SelectedPath.ToString() != "")
-                    PopupTBXFolder.Text = folderBrowserDialog.SelectedPath;
+                if (condition) guiLabel.Foreground = Brushes.Black;
+                else guiLabel.Foreground = Brushes.Red;
             }
+
+            return condition;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            notifyIcon.SetVisibility(false);
+            using (new Logger(sender, e))
+            {
+                notifyIcon.SetVisibility(false);
+            }
         }
     }
 }

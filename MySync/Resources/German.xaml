@@ -28,9 +28,8 @@
     <system:String x:Key="tabHistory">Ereignislog</system:String>
     
     <!-- Tab Filter -->
-    <system:String x:Key="filterAdd">Hinzufügen</system:String>
-    <system:String x:Key="filterEdit">Bearbeiten</system:String>
-    <system:String x:Key="filterDelete">Entfernen</system:String>
+    <system:String x:Key="filterAdd">+</system:String>
+    <system:String x:Key="filterDelete">-</system:String>
 
     <!-- Tab Server -->
     <system:String x:Key="serverDescription">Beschreibung</system:String>

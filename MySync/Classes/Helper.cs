@@ -15,6 +15,31 @@ namespace My_Sync.Classes
     static class Helper
     {
         /// <summary>
+        /// Gets the bitmap image (embedded resource) of the given filename
+        /// </summary>
+        /// <param name="imageName">image which should get retrieved</param>
+        /// <param name="extension">file extension of the image resource</param>
+        /// <param name="size">sets the size (width & height) of the image</param>
+        /// <returns>image object containing the image of the resources</returns>
+        public static BitmapImage GetBitmapImageOfAssembly(string imageName, string extension = ".png", int size = 7)
+        {
+            using (new Logger(imageName, extension, size))
+            {
+                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                string resourceString = String.Format("{0}.Images.ServerType.{1}{2}", mainWindow.GetType().Namespace, imageName, extension);
+                Stream imageStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceString);
+
+                if (imageStream == null) return null;
+
+                BitmapImage bi = new BitmapImage();
+                bi.BeginInit();
+                bi.StreamSource = imageStream;
+                bi.EndInit();
+                return bi;
+            }
+        }
+
+        /// <summary>
         /// Gets the image (embedded resource) of the given filename
         /// </summary>
         /// <param name="imageName">image which should get retrieved</param>
@@ -25,18 +50,8 @@ namespace My_Sync.Classes
         {
             using (new Logger(imageName, extension, size))
             {
-                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
-                string resourceString = String.Format("{0}.Images.ServerType.{1}{2}", mainWindow.GetType().Namespace, imageName, extension);
-                Stream imageStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceString);
-
-                if (imageStream == null) return null;
-
                 Image image = new Image { Margin = new Thickness(1), Width = size, Height = size };
-                BitmapImage bi = new BitmapImage();
-                bi.BeginInit();
-                bi.StreamSource = imageStream;
-                bi.EndInit();
-                image.Source = bi;
+                image.Source = GetBitmapImageOfAssembly(imageName, extension, size);
                 return image;
             }
         } 
@@ -73,6 +88,35 @@ namespace My_Sync.Classes
         {
             get { return server; }
             set { server = value; }
+        }
+
+        #endregion
+    }
+
+    class ServerTypeImage
+    {
+        private int id;
+        private string serverType;
+        private BitmapImage image;
+
+        #region Getter / Setter
+
+        public int Id
+        {
+            get { return id; }
+            set { id = value; }
+        }
+
+        public string ServerType
+        {
+            get { return serverType; }
+            set { serverType = value; }
+        }
+
+        public BitmapImage Image
+        {
+            get { return image; }
+            set { image = value; }
         }
 
         #endregion

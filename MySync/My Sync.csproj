@@ -90,6 +90,7 @@
     <Compile Include="Classes\Logger.cs" />
     <Compile Include="Classes\MemoryManagement.cs" />
     <Compile Include="Classes\NotifyIcon.cs" />
+    <Compile Include="Classes\SyncItemInfo.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
