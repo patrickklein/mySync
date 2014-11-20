@@ -14,6 +14,17 @@ namespace My_Sync.Classes
 {
     static class Helper
     {
+        public static void SaveValueToSettings(object settingItem, object value) 
+        {
+            using (new Logger(settingItem, value))
+            {
+                Type itemType = settingItem.GetType();
+                settingItem = value;
+                //MySync.Default.username = Convert.ChangeType(value, itemType);
+                MySync.Default.Save();
+            }
+        }
+
         /// <summary>
         /// Gets the bitmap image (embedded resource) of the given filename
         /// </summary>

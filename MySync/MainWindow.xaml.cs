@@ -1,4 +1,5 @@
-﻿using My_Sync.Classes;
+﻿using Microsoft.Win32;
+using My_Sync.Classes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -38,10 +39,31 @@ namespace My_Sync
                 InitializeObjects();
                 InitializePopup();
 
-                //CheckInternetConnection.IsConnected();
-                FolderManagement.CreateSyncFolder();
-                FolderManagement.CreateShortcut("test", @"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Code\Log\FolderDelete");
+                //CheckInternetConnection.IsConnected
 
+                //SyncItemInfo temp = new SyncItemInfo();
+                //temp.GetFileInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Zeitaufzeichnung.xlsx");
+                //temp.GetDirectoryInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\");
+            }
+        }
+
+        /// <summary>
+        /// Initialize all needed objects for GUI and synchronisation
+        /// </summary>
+        private void InitializeObjects()
+        {
+            using (new Logger())
+            {
+                SetLanguageDictionary(MySync.Default.usedLanguage);
+         
+                //General Tab
+                int chosenIndex = GeneralCBLanguage.Items.Cast<ComboBoxItem>().Select(x => x.Uid == "de-AT").ToList().IndexOf(true);
+                GeneralCBLanguage.SelectedIndex = chosenIndex;
+                GeneralCBXShowNotification.IsChecked = MySync.Default.showNotification;
+                GeneralCBXAddToFavorites.IsChecked = MySync.Default.addToFavorites;
+                GeneralCBXStartAtStartup.IsChecked = MySync.Default.runAtStartup;
+
+                //Server Tab
                 SynchronizationPoint point = new SynchronizationPoint();
                 point.ServerType = Helper.GetImageOfAssembly("type1");
                 point.Description = "FH Technikum Wien";
@@ -65,21 +87,7 @@ namespace My_Sync
 
                 ServerDGSynchronizationPoints.ItemsSource = serverPoints;
 
-                //SyncItemInfo temp = new SyncItemInfo();
-                //temp.GetFileInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Zeitaufzeichnung.xlsx");
-                //temp.GetDirectoryInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\");
-            }
-        }
-
-        /// <summary>
-        /// Initialize all needed objects for GUI and synchronisation
-        /// </summary>
-        private void InitializeObjects()
-        {
-            using (new Logger())
-            {
-                SetLanguageDictionary(MySync.Default.usedLanguage);
-
+                //Notification Icon
                 notifyIcon = new NotifyIcon();
                 notifyIcon.InitializeNotifyIcon();
             }
@@ -146,6 +154,77 @@ namespace My_Sync
         }
 
         #region Eventhandler
+
+        #region General Tab
+
+        private void generalCBLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                string text = ((ContentControl)((sender as ComboBox).SelectedItem)).Content.ToString();
+                string uid = ((ContentControl)((sender as ComboBox).SelectedItem)).Uid.ToString();
+
+                SetLanguageDictionary(uid);
+
+                //save selection to settings
+                MySync.Default.usedLanguage = uid;
+            }
+        }
+
+        private void StartAtStartup_Check(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                //The path to the key where Windows looks for startup applications
+                RegistryKey rkApp = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+
+                //Name of Assembly
+                var nameHelper = new AssemblyName(Assembly.GetExecutingAssembly().FullName);
+
+                //Add/remove the value in the registry so that the application runs/not runs at startup
+                if ((bool)GeneralCBXStartAtStartup.IsChecked) 
+                    rkApp.SetValue(nameHelper.Name, Assembly.GetExecutingAssembly().Location);
+                else 
+                    rkApp.DeleteValue(nameHelper.Name, false);
+
+                //save selection to settings
+                MySync.Default.runAtStartup = (bool)GeneralCBXStartAtStartup.IsChecked;
+            }
+        }
+
+        private void ShowNotification_Check(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                //save selection to settings
+                MySync.Default.showNotification = (bool)GeneralCBXShowNotification.IsChecked;
+            }
+        }
+
+        private void AddToFavorites_Check(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                if ((bool)GeneralCBXAddToFavorites.IsChecked)
+                {
+                    FolderManagement.DeleteSyncFolder();
+                    FolderManagement.CreateSyncFolder();
+
+                    foreach (SynchronizationPoint item in ServerDGSynchronizationPoints.Items)
+                        FolderManagement.CreateShortcut(item.Description, item.Folder);
+                }
+                else
+                {
+                    FolderManagement.DeleteShortcut();
+                    FolderManagement.DeleteSyncFolder();
+                }
+
+                //save selection to settings
+                MySync.Default.addToFavorites = (bool)GeneralCBXAddToFavorites.IsChecked;
+            }
+        }
+
+        #endregion
 
         #region Filter Tab
 
@@ -241,6 +320,9 @@ namespace My_Sync
                 ServerDGSynchronizationPoints.ItemsSource = null;
                 ServerDGSynchronizationPoints.ItemsSource = serverPoints;
                 ServerDGSynchronizationPoints.Items.Refresh();
+
+                //Check for favorites folder and deletes the related link
+                AddToFavorites_Check(sender, e);
             }
         }
 
@@ -286,8 +368,9 @@ namespace My_Sync
                 ServerDGSynchronizationPoints.ItemsSource = serverPoints;
                 ServerDGSynchronizationPoints.Items.Refresh();
 
-                //Close popup window
+                //Close popup window and check for favorites folder and adds a related link
                 ClosePopup_Click(sender, e);
+                AddToFavorites_Check(sender, e);
             }
         }
 
@@ -350,14 +433,7 @@ namespace My_Sync
         /// <param name="e">event arguments</param>
         private void WindowBTNClose(object sender, RoutedEventArgs e)
         {
-            using (new Logger(sender, e))
-            {
-                //FolderManagement.SetFolderIcon("C:\\Test");
-                //FolderManagement.ResetFolderIcon("C:\\Test");
-                FolderManagement.DeleteShortcut();
-                FolderManagement.DeleteSyncFolder();
-            }
-
+            MySync.Default.Save();
             Close();
         }
 
@@ -372,6 +448,19 @@ namespace My_Sync
             {
                 this.Left = SystemParameters.WorkArea.Right - this.Width;
                 this.Top = SystemParameters.WorkArea.Bottom - this.Height;
+            }
+        }
+
+        /// <summary>
+        /// Disposes the notification icon if application is closing (if not the icon stays in the windows statusbar)
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                notifyIcon.SetVisibility(false);
             }
         }
 
@@ -391,19 +480,6 @@ namespace My_Sync
             }
 
             return condition;
-        }
-
-        /// <summary>
-        /// Disposes the notification icon if application is closing (if not the icon stays in the windows statusbar)
-        /// </summary>
-        /// <param name="sender">event sender</param>
-        /// <param name="e">event arguments</param>
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            using (new Logger(sender, e))
-            {
-                notifyIcon.SetVisibility(false);
-            }
         }
     }
 }

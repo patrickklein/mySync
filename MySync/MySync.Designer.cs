@@ -94,5 +94,41 @@ namespace My_Sync {
                 this["mainFolder"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool runAtStartup {
+            get {
+                return ((bool)(this["runAtStartup"]));
+            }
+            set {
+                this["runAtStartup"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool showNotification {
+            get {
+                return ((bool)(this["showNotification"]));
+            }
+            set {
+                this["showNotification"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool addToFavorites {
+            get {
+                return ((bool)(this["addToFavorites"]));
+            }
+            set {
+                this["addToFavorites"] = value;
+            }
+        }
     }
 }

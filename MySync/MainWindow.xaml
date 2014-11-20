@@ -94,9 +94,16 @@
                             <StackPanel Orientation="Vertical" Height="{StaticResource TabItemContentHeight}">
                                 <Label Content="System" Margin="0,0,0,10" FontWeight="Bold"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <Label Content="{DynamicResource generalLanguage}" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-                                    <ComboBox Text="{DynamicResource language}"/>
+                                    <Label Content="{DynamicResource generalLanguage}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                    <ComboBox Width="130" Height="23" Name="GeneralCBLanguage" SelectionChanged="generalCBLanguage_SelectionChanged">
+                                        <ComboBoxItem Content="{DynamicResource generalLanguageSystem}"  Uid=""/>
+                                        <ComboBoxItem Content="{DynamicResource generalLanguageGerman}"  Uid="de-AT"/>
+                                        <ComboBoxItem Content="{DynamicResource generalLanguageEnglish}" Uid="en-US"/>
+                                    </ComboBox>
                                 </StackPanel>
+                                <CheckBox Margin="5,15,0,0" Name="GeneralCBXStartAtStartup"   Checked="StartAtStartup_Check"   Unchecked="StartAtStartup_Check"   Content="{DynamicResource generalStartup}" />
+                                <CheckBox Margin="5,5,0,0"  Name="GeneralCBXShowNotification" Checked="ShowNotification_Check" Unchecked="ShowNotification_Check" Content="{DynamicResource generalNotification}" />
+                                <CheckBox Margin="5,5,0,0"  Name="GeneralCBXAddToFavorites"   Checked="AddToFavorites_Check"   Unchecked="AddToFavorites_Check"   Content="{DynamicResource generalLinks}" />
                             </StackPanel>
                         </Grid>
                     </TabItem>
@@ -179,7 +186,7 @@
                     </TabItem>
                 </TabControl>
                 <!-- Popup Window -->
-                <StackPanel Visibility="Visible" Name="PopupWindow" Width="{Binding ElementName=mainWindow, Path=ActualWidth}" Height="{Binding ElementName=mainWindow, Path=ActualHeight}" Background="#97141414" Panel.ZIndex="1">
+                <StackPanel Visibility="Collapsed" Name="PopupWindow" Width="{Binding ElementName=mainWindow, Path=ActualWidth}" Height="{Binding ElementName=mainWindow, Path=ActualHeight}" Background="#97141414" Panel.ZIndex="1">
                     <Border BorderBrush="Black" Margin="0,25,0,0" BorderThickness="2" Background="Black" Width="300">
                         <StackPanel Background="White" VerticalAlignment="Center" Height="300">
                             <Grid Margin="10">

@@ -29,6 +29,12 @@
 
     <!-- Tab General -->
     <system:String x:Key="generalLanguage">Language:</system:String>
+    <system:String x:Key="generalLanguageSystem">System language</system:String>
+    <system:String x:Key="generalLanguageGerman">German (de-AT)</system:String>
+    <system:String x:Key="generalLanguageEnglish">English (en-US)</system:String>
+    <system:String x:Key="generalStartup">Start mySync at startup</system:String>
+    <system:String x:Key="generalNotification">Show desktop notifications</system:String>
+    <system:String x:Key="generalLinks">Show links in Favorites in Windows Explorer</system:String>
     
     <!-- Tab Filter -->
     <system:String x:Key="filterAdd">Add</system:String>
