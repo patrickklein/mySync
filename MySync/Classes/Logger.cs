@@ -8,6 +8,9 @@ using System.IO;
 using System.Diagnostics;
 using System.Reflection;
 using My_Sync.Properties;
+using System.Windows.Documents;
+using System.Windows.Controls;
+using System.Text.RegularExpressions;
 
 namespace My_Sync.Classes
 {
@@ -72,7 +75,7 @@ namespace My_Sync.Classes
         /// Creates the log entry in the log file (double checks availability of the logfile and if logging is wanted)
         /// </summary>
         /// <param name="message">defines the message, which is going to be logged</param>
-        private void Log(string message)
+        public void Log(string message)
         {
             string finalMessage = String.Format("[{0:dd/MM/yyyy HH:mm:ss}]: {1}", DateTime.Now, message);
 

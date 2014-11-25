@@ -28,6 +28,8 @@
     <system:String x:Key="tabHistory">Ereignislog</system:String>
 
     <!-- Tab General -->
+    <system:String x:Key="generalHeaderSystem">System</system:String>
+    <system:String x:Key="generalHeaderSynchronization">Synchronisierung</system:String>
     <system:String x:Key="generalLanguage">Sprache:</system:String>
     <system:String x:Key="generalLanguageSystem">Systemsprache</system:String>
     <system:String x:Key="generalLanguageGerman">Deutsch (de-AT)</system:String>
@@ -35,8 +37,13 @@
     <system:String x:Key="generalStartup">Starte mySync automatisch beim Systemstart</system:String>
     <system:String x:Key="generalNotification">Desktop Benachrichtigungen anzeigen</system:String>
     <system:String x:Key="generalLinks">Link in den Favoriten im Windows Explorer hinzufügen</system:String>
-    
+    <system:String x:Key="generalFastSync">Änderungen sofort synchronisieren</system:String>
+    <system:String x:Key="generalInterval">Intervall:</system:String>
+    <system:String x:Key="generalIntervalMinutes">Minuten</system:String>
+    <system:String x:Key="generalIntervalHours">Stunden</system:String>
+
     <!-- Tab Filter -->
+    <system:String x:Key="filterDescription">Dateifilter Definition</system:String>
     <system:String x:Key="filterAdd">+</system:String>
     <system:String x:Key="filterDelete">-</system:String>
 

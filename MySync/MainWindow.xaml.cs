@@ -29,7 +29,7 @@ namespace My_Sync
     {
         public string applicationName = "MySync";
         private NotifyIcon notifyIcon;
-        private List<SynchronizationPoint> serverPoints = new List<SynchronizationPoint>();
+        private List<string> fileFilter = new List<string>();
 
         public MainWindow()
         {
@@ -38,6 +38,15 @@ namespace My_Sync
                 InitializeComponent();
                 InitializeObjects();
                 InitializePopup();
+
+                fileFilter.Add("test1");
+                fileFilter.Add("test2");
+                fileFilter.Add("test3");
+                fileFilter.Add("test4");
+                FilterLVFilter.ItemsSource = fileFilter.Select(x => new { Value = x }).ToList();
+
+                //FilterLVFilter.Columns[0].Header = "File Filter Definition";
+                //FilterLVFilter.Items.Add("test");
 
                 //CheckInternetConnection.IsConnected
 
@@ -55,37 +64,23 @@ namespace My_Sync
             using (new Logger())
             {
                 SetLanguageDictionary(MySync.Default.usedLanguage);
-         
+
+                Database.CreateDatabase();
+
+                //Server Entry Point
+                ServerDGSynchronizationPoints.ItemsSource = Database.GetServerEntryPoints();
+
+                //History
+                RichTextBox textBox = ((MainWindow)System.Windows.Application.Current.MainWindow).HistoryRTBHistory;
+                Database.GetHistory().ForEach(x => textBox.AppendText(x + "\r"));
+
                 //General Tab
-                int chosenIndex = GeneralCBLanguage.Items.Cast<ComboBoxItem>().Select(x => x.Uid == "de-AT").ToList().IndexOf(true);
-                GeneralCBLanguage.SelectedIndex = chosenIndex;
+                GeneralCBLanguage.SelectedIndex = GeneralCBLanguage.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.usedLanguage).ToList().IndexOf(true);
+                GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
                 GeneralCBXShowNotification.IsChecked = MySync.Default.showNotification;
                 GeneralCBXAddToFavorites.IsChecked = MySync.Default.addToFavorites;
                 GeneralCBXStartAtStartup.IsChecked = MySync.Default.runAtStartup;
-
-                //Server Tab
-                SynchronizationPoint point = new SynchronizationPoint();
-                point.ServerType = Helper.GetImageOfAssembly("type1");
-                point.Description = "FH Technikum Wien";
-                point.Folder = @"D:\Studium\MSC - Softwareentwicklung";
-                point.Server = "http://172.123.145.90/mySync";
-                serverPoints.Add(point);
-
-                point = new SynchronizationPoint();
-                point.ServerType = Helper.GetImageOfAssembly("type2");
-                point.Description = "Home";
-                point.Folder = @"C:\Users\Frank\Home";
-                point.Server = "http://home.me/mySync";
-                serverPoints.Add(point);
-
-                point = new SynchronizationPoint();
-                point.ServerType = Helper.GetImageOfAssembly("type3");
-                point.Description = "Work";
-                point.Folder = @"D:\Work\ABC Company Inc.";
-                point.Server = "http://school.me/mySync";
-                serverPoints.Add(point);
-
-                ServerDGSynchronizationPoints.ItemsSource = serverPoints;
+                GeneralCBXFastSync.IsChecked = MySync.Default.fastSync;
 
                 //Notification Icon
                 notifyIcon = new NotifyIcon();
@@ -144,12 +139,18 @@ namespace My_Sync
 
                 switch (cultureCode)
                 {
-                    case "de-AT":   dict.Source = new Uri(@"..\Resources\German.xaml",  UriKind.Relative); break;
-                    case "en-US":   dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
-                    default:        dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
+                    case "de-AT": dict.Source = new Uri(@"..\Resources\German.xaml",  UriKind.Relative); break;
+                    case "en-US": dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
+                    default:      dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
                 }
 
                 this.Resources.MergedDictionaries.Add(dict);
+
+                Database.AddHistory("hy");
+
+                RichTextBox textBox = this.HistoryRTBHistory;
+                textBox.Document.Blocks.Clear();
+                Database.GetHistory().ForEach(x => textBox.AppendText(x + "\r"));
             }
         }
 
@@ -157,7 +158,12 @@ namespace My_Sync
 
         #region General Tab
 
-        private void generalCBLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        /// <summary>
+        /// Changes the app language to the selected one and saves the chosen value in the settings file
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void GeneralCBLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             using (new Logger(sender, e))
             {
@@ -167,10 +173,62 @@ namespace My_Sync
                 SetLanguageDictionary(uid);
 
                 //save selection to settings
-                MySync.Default.usedLanguage = uid;
+                Helper.SaveSetting("usedLanguage", uid);
             }
         }
 
+        /// <summary>
+        /// Changes the synchronization interval to the selected one, restarts the timer and saves the chosen value in the settings file
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void GeneralCBInterval_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+
+                if (GeneralCBInterval.SelectedIndex != -1)
+                {
+                    string text = ((ContentControl)(GeneralCBInterval.SelectedItem)).Content.ToString();
+                    string uid = ((ContentControl)(GeneralCBInterval.SelectedItem)).Uid.ToString();
+
+                    //save selection to settings
+                    Helper.SaveSetting("synchronizationInterval", uid);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Defines if the app should synchronize immediately after a change and saves the chosen value in the settings file
+        /// Disables the interval combobox if fastsync is checked
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void GeneralCBXFastSync_Check(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                bool status = (bool)GeneralCBXFastSync.IsChecked;
+                if (status)
+                {
+                    GeneralCBInterval.SelectedIndex = -1;
+                    GeneralCBInterval.IsEnabled = false;
+                }
+                else
+                {
+                    GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
+                    GeneralCBInterval.IsEnabled = true;
+                }
+
+                Helper.SaveSetting("fastSync", status);
+            }
+        }
+
+        /// <summary>
+        /// Defines if the app is started at windows boot and saves the chosen value in the settings file
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void StartAtStartup_Check(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -188,19 +246,29 @@ namespace My_Sync
                     rkApp.DeleteValue(nameHelper.Name, false);
 
                 //save selection to settings
-                MySync.Default.runAtStartup = (bool)GeneralCBXStartAtStartup.IsChecked;
+                Helper.SaveSetting("runAtStartup", (bool)GeneralCBXStartAtStartup.IsChecked);
             }
         }
 
+        /// <summary>
+        /// Defines the user notification status and saves the chosen value in the settings file
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void ShowNotification_Check(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
             {
                 //save selection to settings
-                MySync.Default.showNotification = (bool)GeneralCBXShowNotification.IsChecked;
+                Helper.SaveSetting("showNotification", (bool)GeneralCBXShowNotification.IsChecked);
             }
         }
 
+        /// <summary>
+        /// Creates/Deletes the synchronisation folder in user favorites and saves the chosen value in the settings file
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
         private void AddToFavorites_Check(object sender, RoutedEventArgs e)
         {
             using (new Logger(sender, e))
@@ -220,13 +288,30 @@ namespace My_Sync
                 }
 
                 //save selection to settings
-                MySync.Default.addToFavorites = (bool)GeneralCBXAddToFavorites.IsChecked;
+                Helper.SaveSetting("addToFavorites", (bool)GeneralCBXAddToFavorites.IsChecked);
             }
         }
 
         #endregion
 
         #region Filter Tab
+
+        /// <summary>
+        /// Renames the header of the datagrid column and defines the width property
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void FilterLVFilter_AutoGeneratedColumns(object sender, EventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                //Rename column
+                ResourceDictionary dict = this.Resources.MergedDictionaries.ToList().First();
+
+                FilterLVFilter.Columns[0].Header = dict["filterDescription"].ToString();
+                FilterLVFilter.Columns[0].Width = TABControl.ActualWidth - 18;
+            }
+        }
 
         /// <summary>
         /// Adds a new definition of a filter to the filterlist
@@ -237,18 +322,18 @@ namespace My_Sync
         {
             using (new Logger(sender, e))
             {
-                if (FilterTBTerm.Text.Trim() != "" && !FilterLVFilter.Items.Contains(FilterTBTerm.Text.Trim()))
+                if (FilterTBTerm.Text.Trim() != "" && !fileFilter.Contains(FilterTBTerm.Text.Trim()))
                 {
-                    int index = FilterLVFilter.SelectedIndex;
-                    if (index >= 0) FilterLVFilter.Items[index] = FilterTBTerm.Text.Trim();
-                    else FilterLVFilter.Items.Add(FilterTBTerm.Text.Trim());
+                    fileFilter.Add(FilterTBTerm.Text.Trim());
+                    FilterLVFilter.ItemsSource = fileFilter.Select(x => new { Value = x }).ToList();
+                    FilterLVFilter.Items.Refresh();
                     FilterTBTerm.Text = "";
                 }
             }
         }
 
         /// <summary>
-        /// deletes the chosen filter from the list
+        /// Deletes the chosen filter from the list
         /// </summary>
         /// <param name="sender">event sender</param>
         /// <param name="e">event arguments</param>
@@ -257,8 +342,9 @@ namespace My_Sync
             using (new Logger(sender, e))
             {
                 int index = FilterLVFilter.SelectedIndex;
-                if (index >= 0) FilterLVFilter.Items.RemoveAt(index);
-                FilterLVFilter.SelectedIndex = index;
+                if (index >= 0) fileFilter.RemoveAt(index);
+                FilterLVFilter.ItemsSource = fileFilter.Select(x => new { Value = x }).ToList();
+                FilterLVFilter.Items.Refresh();
             }
         }
 
@@ -315,10 +401,9 @@ namespace My_Sync
                 if (index == -1) return;
 
                 SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
-                serverPoints.RemoveAt(serverPoints.IndexOf(selectedSyncPoint));
+                Database.DeleteServerEntryPoint(selectedSyncPoint);
 
-                ServerDGSynchronizationPoints.ItemsSource = null;
-                ServerDGSynchronizationPoints.ItemsSource = serverPoints;
+                ServerDGSynchronizationPoints.ItemsSource = Database.GetServerEntryPoints();
                 ServerDGSynchronizationPoints.Items.Refresh();
 
                 //Check for favorites folder and deletes the related link
@@ -363,9 +448,10 @@ namespace My_Sync
                 point.Description = PopupTBXDescription.Text.Trim();
                 point.Folder = PopupTBXFolder.Text.Trim();
                 point.Server = PopupTBXServerEntryPoint.Text.Trim();
-                serverPoints.Add(point);
 
-                ServerDGSynchronizationPoints.ItemsSource = serverPoints;
+                Database.AddServerEntryPoint(point);
+
+                ServerDGSynchronizationPoints.ItemsSource = Database.GetServerEntryPoints();
                 ServerDGSynchronizationPoints.Items.Refresh();
 
                 //Close popup window and check for favorites folder and adds a related link
@@ -408,14 +494,14 @@ namespace My_Sync
                 int additionalWidth = 20;
 
                 ServerDGSynchronizationPoints.Columns[0].Header = "";
-                ServerDGSynchronizationPoints.Columns[1].MinWidth = 10;
+                ServerDGSynchronizationPoints.Columns[0].MinWidth = 20;
 
                 ServerDGSynchronizationPoints.Columns[1].Header = dict["serverDescription"].ToString();
-                ServerDGSynchronizationPoints.Columns[1].MinWidth = 100;
+                ServerDGSynchronizationPoints.Columns[1].MinWidth = 110;
                 ServerDGSynchronizationPoints.Columns[1].Width = new DataGridLength(ServerDGSynchronizationPoints.Columns[1].ActualWidth + additionalWidth);
 
                 ServerDGSynchronizationPoints.Columns[2].Header = dict["serverFolder"].ToString();
-                ServerDGSynchronizationPoints.Columns[2].MinWidth = 200;
+                ServerDGSynchronizationPoints.Columns[2].MinWidth = 210;
                 ServerDGSynchronizationPoints.Columns[2].Width = new DataGridLength(ServerDGSynchronizationPoints.Columns[2].ActualWidth + additionalWidth);
 
                 ServerDGSynchronizationPoints.Columns[3].Header = dict["serverEntryPoint"].ToString();
@@ -427,7 +513,7 @@ namespace My_Sync
         #endregion
 
         /// <summary>
-        /// Exits the application
+        /// Exits the application and saves all changed values
         /// </summary>
         /// <param name="sender">event sender</param>
         /// <param name="e">event arguments</param>

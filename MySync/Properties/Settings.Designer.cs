@@ -22,5 +22,16 @@ namespace My_Sync.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
+        [global::System.Configuration.DefaultSettingValueAttribute("data source=\"D:\\Studium\\MSC - Softwareentwicklung\\3. Semester\\Master Projekt\\Proj" +
+            "ekt\\Code\\MySync.Client\\MySync\\mySync.db\"")]
+        public string mySyncConnectionString {
+            get {
+                return ((string)(this["mySyncConnectionString"]));
+            }
+        }
     }
 }

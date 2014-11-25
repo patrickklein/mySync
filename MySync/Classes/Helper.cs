@@ -14,13 +14,16 @@ namespace My_Sync.Classes
 {
     static class Helper
     {
-        public static void SaveValueToSettings(object settingItem, object value) 
+        /// <summary>
+        /// Method for saving property values to user settings
+        /// </summary>
+        /// <param name="property">settings property which should get the new value</param>
+        /// <param name="value">value which should be set</param>
+        public static void SaveSetting(string property, object value)
         {
-            using (new Logger(settingItem, value))
+            using (new Logger(property, value))
             {
-                Type itemType = settingItem.GetType();
-                settingItem = value;
-                //MySync.Default.username = Convert.ChangeType(value, itemType);
+                MySync.Default.GetType().GetProperty(property).SetValue(MySync.Default, value);
                 MySync.Default.Save();
             }
         }
@@ -63,6 +66,7 @@ namespace My_Sync.Classes
             {
                 Image image = new Image { Margin = new Thickness(1), Width = size, Height = size };
                 image.Source = GetBitmapImageOfAssembly(imageName, extension, size);
+                image.Name = imageName;
                 return image;
             }
         } 
@@ -133,7 +137,7 @@ namespace My_Sync.Classes
         #endregion
     }
 
-    public class FolderBrowserWindow : IWin32Window
+    class FolderBrowserWindow : IWin32Window
     {
         IntPtr _handle;
 

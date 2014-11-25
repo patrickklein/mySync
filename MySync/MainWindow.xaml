@@ -9,13 +9,13 @@
         AllowsTransparency="True" 
         WindowStyle="None"
         Background="Transparent"
-        Height="350" Width="350" 
+        Height="350" Width="400" 
         Icon="Images/icon.ico" 
         x:Name="mainWindow">
 
     <Window.Resources>
         <!-- Global values -->
-        <sys:Double x:Key="ItemWidth">58</sys:Double>
+        <sys:Double x:Key="ItemWidth">60</sys:Double>
         <sys:Double x:Key="ImageSize">32</sys:Double>
         <sys:Double x:Key="HeaderButtonSize">20</sys:Double>
         <sys:Double x:Key="TabItemContentHeight">270</sys:Double>
@@ -58,7 +58,7 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,-30" HorizontalAlignment="Right" Panel.ZIndex="0">
                     <!-- Header Button -->
                     <StackPanel Orientation="Horizontal" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Top">
-                        <Button ToolTip="{DynamicResource windowMinimize}" 
+                       <!-- <Button ToolTip="{DynamicResource windowMinimize}" 
                                 Height="{StaticResource HeaderButtonSize}" Width="{StaticResource HeaderButtonSize}">
                             <Path Width="7" Height="8" Data="M 0,4 C0,4 0,5 0,5 0,5 1,5 1,5 1,5 1,6 1,6 1,6 2,6 2,6 2,6 2,7 2,7 2,7 3,7 3,7 3,7 3,8 3,8 3,8 4,8 4,8 4,8 4,7 4,7 4,7 5,7 5,7 5,7 5,6 5,6 5,6 6,6 6,6 6,6 6,5 6,5 6,5 7,5 7,5 7,5 7,4 7,4 7,4 5,4 5,4 5,4 5,5 5,5 5,5 4,5 4,5 4,5 4,6 4,6 4,6 3,6 3,6 3,6 3,5 3,5 3,5 2,5 2,5 2,5 2,4 2,4 2,4 0,4 0,4 zM 0,0 C0,0 0,1 0,1 0,1 1,1 1,1 1,1 1,2 1,2 1,2 2,2 2,2 2,2 2,3 2,3 2,3 3,3 3,3 3,3 3,4 3,4 3,4 4,4 4,4 4,4 4,3 4,3 4,3 5,3 5,3 5,3 5,2 5,2 5,2 6,2 6,2 6,2 6,1 6,1 6,1 7,1 7,1 7,1 7,0 7,0 7,0 5,0 5,0 5,0 5,1 5,1 5,1 4,1 4,1 4,1 4,2 4,2 4,2 3,2 3,2 3,2 3,1 3,1 3,1 2,1 2,1 2,1 2,0 2,0 2,0 0,0 0,0 z"
                                   Stretch="Fill" Fill="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -72,7 +72,7 @@
                                 Height="{StaticResource HeaderButtonSize}" Width="{StaticResource HeaderButtonSize}">
                             <Path Width="10" Height="10" Data="F1 M 287.743,487.708C 284.649,486.353 281.239,485.584 277.604,485.549C 277.035,485.544 276.475,485.567 275.916,485.602C 275.525,485.625 275.139,485.663 274.752,485.701C 274.691,485.708 274.629,485.711 274.568,485.717L 274.568,485.723C 270.041,486.217 265.856,487.867 262.339,490.4L 259.811,486.673C 259.661,486.455 259.399,486.349 259.141,486.404C 258.881,486.459 258.685,486.661 258.637,486.921L 257.068,495.58L 255.963,501.69C 255.925,501.887 255.98,502.084 256.113,502.234C 256.236,502.373 256.411,502.453 256.635,502.453L 263.5,502.088L 271.231,501.677C 271.491,501.663 271.715,501.497 271.805,501.251C 271.895,501.008 271.831,500.734 271.64,500.559L 268.449,497.549C 270.448,496.252 272.741,495.381 275.205,495.053L 275.211,495.127C 275.964,495.029 276.728,494.966 277.511,494.973C 286.673,495.065 294.027,502.567 293.935,511.728C 293.844,520.891 286.343,528.244 277.18,528.152C 268.019,528.061 260.664,520.56 260.755,511.397C 260.763,510.597 260.848,509.817 260.965,509.049L 252.128,505.713C 251.735,507.465 251.508,509.28 251.489,511.148C 251.347,525.43 262.808,537.122 277.088,537.264C 291.369,537.407 303.063,525.945 303.204,511.664C 303.309,501.027 296.975,491.836 287.836,487.773 Z"
 								  Stretch="Fill" Fill="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Button>
+                        </Button>-->
                         <Button ToolTip="{DynamicResource windowExit}" 
                                 Height="{StaticResource HeaderButtonSize}" Width="{StaticResource HeaderButtonSize}" 
                                 Click="WindowBTNClose">
@@ -92,18 +92,38 @@
                         </TabItem.Header>
                         <Grid Height="{StaticResource TabItemContentHeight}">
                             <StackPanel Orientation="Vertical" Height="{StaticResource TabItemContentHeight}">
-                                <Label Content="System" Margin="0,0,0,10" FontWeight="Bold"/>
+                                <Label Content="{DynamicResource generalHeaderSystem}" Margin="0,0,0,10" FontWeight="Bold"/>
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="{DynamicResource generalLanguage}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                    <ComboBox Width="130" Height="23" Name="GeneralCBLanguage" SelectionChanged="generalCBLanguage_SelectionChanged">
+                                    <ComboBox Width="130" Height="23" Name="GeneralCBLanguage" SelectionChanged="GeneralCBLanguage_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource generalLanguageSystem}"  Uid=""/>
                                         <ComboBoxItem Content="{DynamicResource generalLanguageGerman}"  Uid="de-AT"/>
                                         <ComboBoxItem Content="{DynamicResource generalLanguageEnglish}" Uid="en-US"/>
                                     </ComboBox>
                                 </StackPanel>
-                                <CheckBox Margin="5,15,0,0" Name="GeneralCBXStartAtStartup"   Checked="StartAtStartup_Check"   Unchecked="StartAtStartup_Check"   Content="{DynamicResource generalStartup}" />
+                                <CheckBox Margin="5,10,0,0" Name="GeneralCBXStartAtStartup"   Checked="StartAtStartup_Check"   Unchecked="StartAtStartup_Check"   Content="{DynamicResource generalStartup}" />
                                 <CheckBox Margin="5,5,0,0"  Name="GeneralCBXShowNotification" Checked="ShowNotification_Check" Unchecked="ShowNotification_Check" Content="{DynamicResource generalNotification}" />
                                 <CheckBox Margin="5,5,0,0"  Name="GeneralCBXAddToFavorites"   Checked="AddToFavorites_Check"   Unchecked="AddToFavorites_Check"   Content="{DynamicResource generalLinks}" />
+                                <Label Content="{DynamicResource generalHeaderSynchronization}" Margin="0,20,0,10" FontWeight="Bold" BorderBrush="Black" BorderThickness="0,1,0,0" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="{DynamicResource generalInterval}" HorizontalAlignment="Left" />
+                                    <ComboBox Width="100" Height="23" SelectionChanged="GeneralCBInterval_SelectionChanged" HorizontalAlignment="Left" Name="GeneralCBInterval">
+                                        <ComboBoxItem Uid="5">   <TextBlock><Run Text="5 "/> <Run Text="{DynamicResource generalIntervalMinutes}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="15">  <TextBlock><Run Text="15 "/><Run Text="{DynamicResource generalIntervalMinutes}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="30">  <TextBlock><Run Text="30 "/><Run Text="{DynamicResource generalIntervalMinutes}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="45">  <TextBlock><Run Text="45 "/><Run Text="{DynamicResource generalIntervalMinutes}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="60">  <TextBlock><Run Text="60 "/><Run Text="{DynamicResource generalIntervalMinutes}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="90">  <TextBlock><Run Text="90 "/><Run Text="{DynamicResource generalIntervalMinutes}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="120"> <TextBlock><Run Text="2 "/> <Run Text="{DynamicResource generalIntervalHours}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="180"> <TextBlock><Run Text="3 "/> <Run Text="{DynamicResource generalIntervalHours}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="240"> <TextBlock><Run Text="4 "/> <Run Text="{DynamicResource generalIntervalHours}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="300"> <TextBlock><Run Text="5 "/> <Run Text="{DynamicResource generalIntervalHours}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="720"> <TextBlock><Run Text="12 "/><Run Text="{DynamicResource generalIntervalHours}"/></TextBlock></ComboBoxItem>
+                                        <ComboBoxItem Uid="1440"><TextBlock><Run Text="24 "/><Run Text="{DynamicResource generalIntervalHours}"/></TextBlock></ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                                <CheckBox Margin="5,10,0,0" Name="GeneralCBXFastSync" Content="{DynamicResource generalFastSync}"
+                                          Checked="GeneralCBXFastSync_Check" Unchecked="GeneralCBXFastSync_Check" />
                             </StackPanel>
                         </Grid>
                     </TabItem>
@@ -139,12 +159,13 @@
                         </TabItem.Header>
                         <Grid Height="{StaticResource TabItemContentHeight}">
                             <StackPanel Orientation="Vertical" Height="{Binding Height, ElementName=grid, Mode=OneWay}">
-                                <ListView  Name="FilterLVFilter" 
-                                           HorizontalContentAlignment="Stretch" 
-                                           VerticalContentAlignment="Stretch" 
-                                           Margin="0,0,0,5" MinHeight="240" />
+                                <DataGrid AutoGenerateColumns="True" HorizontalContentAlignment="Center" 
+                                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Hidden"
+                                          AlternatingRowBackground="Lavender" Margin="0,0,0,5" SelectionMode="Single" SelectionUnit="FullRow" IsReadOnly="True"
+                                          AutoGeneratedColumns="FilterLVFilter_AutoGeneratedColumns" VerticalGridLinesBrush="Transparent" HorizontalGridLinesBrush="Gray"
+                                          Name="FilterLVFilter" MinHeight="240" RowHeight="20"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox Height="23" HorizontalAlignment="Stretch" Name="FilterTBTerm"  Width="275" Margin="0,0,5,0" HorizontalContentAlignment="Stretch" />
+                                    <TextBox Height="23" HorizontalAlignment="Stretch" Name="FilterTBTerm"  Width="325" Margin="0,0,5,0" HorizontalContentAlignment="Stretch" />
                                     <Button Content="{DynamicResource filterAdd}"    Height="23"  Name="FilterBTNAddTerm"    Click="FilterBTNAddTerm_Click"     Width="23" Margin="0,0,5,0"  />
                                     <Button Content="{DynamicResource filterDelete}" Height="23"  Name="FilterBTNDeleteTerm" Click="FilterBTNDeleteTerm_Click"  Width="23" Margin="0,0,5,0" />
                                 </StackPanel>
@@ -166,7 +187,8 @@
                                           HorizontalContentAlignment="Center" VerticalScrollBarVisibility="Auto" 
                                           AlternatingRowBackground="Lavender" Margin="0,0,0,5" 
                                           SelectionMode="Single" SelectionUnit="FullRow" IsReadOnly="True"
-                                          Name="ServerDGSynchronizationPoints" MinHeight="240" RowHeight="20" />
+                                          Name="ServerDGSynchronizationPoints" MinHeight="240" RowHeight="20"
+                                          HorizontalGridLinesBrush="Gray" VerticalGridLinesBrush="Gray"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <Button Content="{DynamicResource serverAdd}"    Height="23"  Name="ServerBTNAddTerm"    Click="ServerBTNAddTerm_Click"     Width="23" Margin="0,0,5,0" />
                                     <Button Content="{DynamicResource serverDelete}" Height="23"  Name="ServerBTNDeleteTerm" Click="ServerBTNDeleteTerm_Click"  Width="23" Margin="0,0,1,0" />
@@ -175,14 +197,17 @@
                         </Grid>
                     </TabItem>
                     <!-- History -->
-                    <TabItem x:Name="TABHistory" Visibility="Collapsed">
+                    <TabItem x:Name="TABHistory">
                         <TabItem.Header>
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Width="{StaticResource ItemWidth}">
                                 <Image Source="Images/Tabs/history.png" Height="{StaticResource ImageSize}" Width="{StaticResource ImageSize}" />
                                 <TextBlock Text="{DynamicResource tabHistory}" Margin="2,0,0,0" HorizontalAlignment="Center" />
                             </StackPanel>
                         </TabItem.Header>
-                        <Grid Height="{StaticResource TabItemContentHeight}"/>
+                        <Grid Height="{StaticResource TabItemContentHeight}">
+                            <RichTextBox HorizontalAlignment="Left" Name="HistoryRTBHistory" VerticalScrollBarVisibility="Auto" IsDocumentEnabled="True" IsEnabled="True" IsReadOnly="True" Margin="0,0,0,0"
+                                         Height="{Binding Height, ElementName=grid, Mode=OneWay}" Width="{Binding Width, ElementName=grid, Mode=OneWay}"/>
+                        </Grid>
                     </TabItem>
                 </TabControl>
                 <!-- Popup Window -->
