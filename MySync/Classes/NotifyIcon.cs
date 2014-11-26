@@ -55,7 +55,7 @@ namespace My_Sync.Classes
 
                 notifyIcon = new System.Windows.Forms.NotifyIcon(new Container());
                 notifyIcon.Text = mainWindow.applicationName;
-                string uri = String.Format("/{0};component/Images/icon.ico", Assembly.GetExecutingAssembly().GetName().Name);
+                string uri = String.Format("/{0};component/Images/Icon/icon.ico", Assembly.GetExecutingAssembly().GetName().Name);
                 Stream iconStream = System.Windows.Application.GetResourceStream(new Uri(uri, UriKind.Relative)).Stream;
                 notifyIcon.Icon = new Icon(iconStream);
                 notifyIcon.Visible = true;

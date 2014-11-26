@@ -10,7 +10,7 @@
         WindowStyle="None"
         Background="Transparent"
         Height="350" Width="400" 
-        Icon="Images/icon.ico" 
+        Icon="Images/Icon/icon.ico" 
         x:Name="mainWindow">
 
     <Window.Resources>

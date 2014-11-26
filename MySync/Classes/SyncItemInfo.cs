@@ -10,14 +10,12 @@ namespace My_Sync.Classes
     class SyncItemInfo
     {
         private string filename;
-
         private string directory;
         private string extension;
         private DateTime creationTime;
         private DateTime lastAccessTime;
         private DateTime lastWriteTime;
         private long size;
-
         private long files;
         private long folders;
 

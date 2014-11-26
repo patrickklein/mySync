@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -69,7 +70,7 @@ namespace My_Sync.Classes
                 image.Name = imageName;
                 return image;
             }
-        } 
+        }
     }
 
     class SynchronizationPoint

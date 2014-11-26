@@ -7,7 +7,6 @@ using System.Windows;
 using System.IO;
 using System.Diagnostics;
 using System.Reflection;
-using My_Sync.Properties;
 using System.Windows.Documents;
 using System.Windows.Controls;
 using System.Text.RegularExpressions;

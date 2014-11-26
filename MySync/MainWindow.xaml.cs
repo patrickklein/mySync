@@ -30,6 +30,7 @@ namespace My_Sync
         public string applicationName = "MySync";
         private NotifyIcon notifyIcon;
         private List<string> fileFilter = new List<string>();
+        private MySyncEntities dbInstance = new MySyncEntities();
 
         public MainWindow()
         {
@@ -38,15 +39,6 @@ namespace My_Sync
                 InitializeComponent();
                 InitializeObjects();
                 InitializePopup();
-
-                fileFilter.Add("test1");
-                fileFilter.Add("test2");
-                fileFilter.Add("test3");
-                fileFilter.Add("test4");
-                FilterLVFilter.ItemsSource = fileFilter.Select(x => new { Value = x }).ToList();
-
-                //FilterLVFilter.Columns[0].Header = "File Filter Definition";
-                //FilterLVFilter.Items.Add("test");
 
                 //CheckInternetConnection.IsConnected
 
@@ -65,14 +57,7 @@ namespace My_Sync
             {
                 SetLanguageDictionary(MySync.Default.usedLanguage);
 
-                Database.CreateDatabase();
-
-                //Server Entry Point
-                ServerDGSynchronizationPoints.ItemsSource = Database.GetServerEntryPoints();
-
-                //History
-                RichTextBox textBox = ((MainWindow)System.Windows.Application.Current.MainWindow).HistoryRTBHistory;
-                Database.GetHistory().ForEach(x => textBox.AppendText(x + "\r"));
+                DAL.CreateDatabase();
 
                 //General Tab
                 GeneralCBLanguage.SelectedIndex = GeneralCBLanguage.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.usedLanguage).ToList().IndexOf(true);
@@ -85,6 +70,13 @@ namespace My_Sync
                 //Notification Icon
                 notifyIcon = new NotifyIcon();
                 notifyIcon.InitializeNotifyIcon();
+
+                //Fill GUI for Server Entry Point, File Filter, History
+                ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
+                FilterLVFilter.ItemsSource = DAL.GetFileFilters().Select(x => new { Value = x.term }).ToList();
+                RichTextBox textBox = this.HistoryRTBHistory;
+                textBox.Document.Blocks.Clear();
+                textBox.AppendText(DAL.GetHistory());               
             }
         }
 
@@ -145,12 +137,6 @@ namespace My_Sync
                 }
 
                 this.Resources.MergedDictionaries.Add(dict);
-
-                Database.AddHistory("hy");
-
-                RichTextBox textBox = this.HistoryRTBHistory;
-                textBox.Document.Blocks.Clear();
-                Database.GetHistory().ForEach(x => textBox.AppendText(x + "\r"));
             }
         }
 
@@ -216,6 +202,8 @@ namespace My_Sync
                 }
                 else
                 {
+                    ServerDGSynchronizationPoints.ItemsSource = dbInstance.ServerEntryPoint.ToList<ServerEntryPoint>();
+                    
                     GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
                     GeneralCBInterval.IsEnabled = true;
                 }
@@ -307,7 +295,6 @@ namespace My_Sync
             {
                 //Rename column
                 ResourceDictionary dict = this.Resources.MergedDictionaries.ToList().First();
-
                 FilterLVFilter.Columns[0].Header = dict["filterDescription"].ToString();
                 FilterLVFilter.Columns[0].Width = TABControl.ActualWidth - 18;
             }
@@ -401,9 +388,9 @@ namespace My_Sync
                 if (index == -1) return;
 
                 SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
-                Database.DeleteServerEntryPoint(selectedSyncPoint);
+                DAL.DeleteServerEntryPoint(selectedSyncPoint.Description);
 
-                ServerDGSynchronizationPoints.ItemsSource = Database.GetServerEntryPoints();
+                ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
                 ServerDGSynchronizationPoints.Items.Refresh();
 
                 //Check for favorites folder and deletes the related link
@@ -449,9 +436,9 @@ namespace My_Sync
                 point.Folder = PopupTBXFolder.Text.Trim();
                 point.Server = PopupTBXServerEntryPoint.Text.Trim();
 
-                Database.AddServerEntryPoint(point);
+                DAL.AddServerEntryPoint(point);
 
-                ServerDGSynchronizationPoints.ItemsSource = Database.GetServerEntryPoints();
+                ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
                 ServerDGSynchronizationPoints.Items.Refresh();
 
                 //Close popup window and check for favorites folder and adds a related link

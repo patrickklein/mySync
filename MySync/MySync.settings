@@ -29,5 +29,11 @@
     <Setting Name="synchronizationInterval" Type="System.String" Scope="User">
       <Value Profile="(Default)">90</Value>
     </Setting>
+    <Setting Name="username" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="password" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

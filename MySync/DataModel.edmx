@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="MySyncModel.Store" Alias="Self" Provider="System.Data.SQLite" ProviderManifestToken="ISO8601" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityContainer Name="MySyncModelStoreContainer">
+          <EntitySet Name="FileFilter" EntityType="MySyncModel.Store.FileFilter" store:Type="Tables" />
+          <EntitySet Name="History" EntityType="MySyncModel.Store.History" store:Type="Tables" />
+          <EntitySet Name="ServerEntryPoint" EntityType="MySyncModel.Store.ServerEntryPoint" store:Type="Tables" />
+        </EntityContainer>
+        <EntityType Name="FileFilter">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="integer" Nullable="false" />
+          <Property Name="term" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="History">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="integer" Nullable="false" />
+          <Property Name="entry" Type="nvarchar" />
+          <Property Name="timestamp" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="ServerEntryPoint">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="integer" Nullable="false" />
+          <Property Name="description" Type="nvarchar" />
+          <Property Name="serverurl" Type="nvarchar" />
+          <Property Name="folderpath" Type="nvarchar" />
+          <Property Name="icon" Type="nvarchar" />
+        </EntityType>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="MySyncModel" Alias="Self" p1:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:p1="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="MySyncEntities" p1:LazyLoadingEnabled="true">
+          <EntitySet Name="FileFilter" EntityType="MySyncModel.FileFilter" />
+          <EntitySet Name="History" EntityType="MySyncModel.History" />
+          <EntitySet Name="ServerEntryPoint" EntityType="MySyncModel.ServerEntryPoint" />
+        </EntityContainer>
+        <EntityType Name="FileFilter">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int64" Nullable="false" />
+          <Property Name="term" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+        </EntityType>
+        <EntityType Name="History">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int64" Nullable="false" />
+          <Property Name="entry" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="timestamp" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+        </EntityType>
+        <EntityType Name="ServerEntryPoint">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int64" Nullable="false" />
+          <Property Name="description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="serverurl" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="folderpath" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="icon" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="MySyncModelStoreContainer" CdmEntityContainer="MySyncEntities">
+          <EntitySetMapping Name="FileFilter">
+            <EntityTypeMapping TypeName="MySyncModel.FileFilter">
+              <MappingFragment StoreEntitySet="FileFilter">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="term" ColumnName="term" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="History">
+            <EntityTypeMapping TypeName="MySyncModel.History">
+              <MappingFragment StoreEntitySet="History">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="entry" ColumnName="entry" />
+                <ScalarProperty Name="timestamp" ColumnName="timestamp" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ServerEntryPoint">
+            <EntityTypeMapping TypeName="MySyncModel.ServerEntryPoint">
+              <MappingFragment StoreEntitySet="ServerEntryPoint">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="description" ColumnName="description" />
+                <ScalarProperty Name="serverurl" ColumnName="serverurl" />
+                <ScalarProperty Name="folderpath" ColumnName="folderpath" />
+                <ScalarProperty Name="icon" ColumnName="icon" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="False" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
