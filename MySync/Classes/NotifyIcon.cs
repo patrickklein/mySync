@@ -21,9 +21,9 @@ namespace My_Sync.Classes
         /// <summary>
         /// Initializes the notification icon and adds some menu entries to the contextmenu
         /// </summary>
-        public void InitializeNotifyIcon()
+        public void InitializeNotifyIcon(string iconName = "")
         {
-            using (new Logger())
+            using (new Logger(iconName))
             {
                 mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
                 ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
@@ -53,9 +53,10 @@ namespace My_Sync.Classes
                 ContextMenu contextMenu = new ContextMenu();
                 contextMenu.MenuItems.AddRange(new MenuItem[] { menuItem0, menuItem1, menuItem2, menuItem3 });
 
+                if (notifyIcon != null) notifyIcon.Dispose();
                 notifyIcon = new System.Windows.Forms.NotifyIcon(new Container());
                 notifyIcon.Text = mainWindow.applicationName;
-                string uri = String.Format("/{0};component/Images/Icon/icon.ico", Assembly.GetExecutingAssembly().GetName().Name);
+                string uri = String.Format("/{0};component/Images/Icon/icon{1}.ico", Assembly.GetExecutingAssembly().GetName().Name, iconName);
                 Stream iconStream = System.Windows.Application.GetResourceStream(new Uri(uri, UriKind.Relative)).Stream;
                 notifyIcon.Icon = new Icon(iconStream);
                 notifyIcon.Visible = true;
@@ -72,7 +73,33 @@ namespace My_Sync.Classes
         /// <param name="visible">true/false</param>
         public void SetVisibility(bool visible)
         {
-            notifyIcon.Visible = visible;
+            using (new Logger(visible))
+            {
+                notifyIcon.Visible = visible;
+            }
+        }
+
+        /// <summary>
+        /// Changes the notification icon of the application to a new one
+        /// </summary>
+        /// <param name="name">name of the icon without "icon" in front of it. Possible values are "", "Download" and "Upload"</param>
+        public void ChangeIcon(string name)
+        {
+            using (new Logger(name))
+            {
+                InitializeNotifyIcon(name);
+            }
+        }
+
+        /// <summary>
+        /// Resets the notification icon to the original one
+        /// </summary>
+        public void ResetIcon()
+        {
+            using(new Logger()) 
+            {
+                InitializeNotifyIcon();
+            }
         }
 
         #region Eventhandler

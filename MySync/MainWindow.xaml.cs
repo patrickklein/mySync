@@ -28,7 +28,7 @@ namespace My_Sync
     public partial class MainWindow : Window
     {
         public string applicationName = "MySync";
-        private NotifyIcon notifyIcon;
+        private NotifyIcon notifyIcon = new NotifyIcon();
         private List<string> fileFilter = new List<string>();
         private MySyncEntities dbInstance = new MySyncEntities();
 
@@ -40,6 +40,9 @@ namespace My_Sync
                 InitializeObjects();
                 InitializePopup();
 
+                //notifyIcon.ChangeIcon("Upload");
+                //notifyIcon.ChangeIcon("Download");
+                //notifyIcon.ResetIcon();
                 //CheckInternetConnection.IsConnected
 
                 //SyncItemInfo temp = new SyncItemInfo();
@@ -56,7 +59,6 @@ namespace My_Sync
             using (new Logger())
             {
                 SetLanguageDictionary(MySync.Default.usedLanguage);
-
                 DAL.CreateDatabase();
 
                 //General Tab
@@ -68,15 +70,15 @@ namespace My_Sync
                 GeneralCBXFastSync.IsChecked = MySync.Default.fastSync;
 
                 //Notification Icon
-                notifyIcon = new NotifyIcon();
                 notifyIcon.InitializeNotifyIcon();
 
                 //Fill GUI for Server Entry Point, File Filter, History
+                ServerDGSynchronizationPoints.Columns.Clear();
                 ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
+                FilterLVFilter.Columns.Clear();
                 FilterLVFilter.ItemsSource = DAL.GetFileFilters().Select(x => new { Value = x.term }).ToList();
-                RichTextBox textBox = this.HistoryRTBHistory;
-                textBox.Document.Blocks.Clear();
-                textBox.AppendText(DAL.GetHistory());               
+                HistoryRTBHistory.Document.Blocks.Clear();
+                HistoryRTBHistory.AppendText(DAL.GetHistory());               
             }
         }
 
@@ -136,6 +138,7 @@ namespace My_Sync
                     default:      dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
                 }
 
+                this.Resources.MergedDictionaries.Clear();
                 this.Resources.MergedDictionaries.Add(dict);
             }
         }
@@ -160,6 +163,8 @@ namespace My_Sync
 
                 //save selection to settings
                 Helper.SaveSetting("usedLanguage", uid);
+
+                InitializeObjects();
             }
         }
 
@@ -201,9 +206,7 @@ namespace My_Sync
                     GeneralCBInterval.IsEnabled = false;
                 }
                 else
-                {
-                    ServerDGSynchronizationPoints.ItemsSource = dbInstance.ServerEntryPoint.ToList<ServerEntryPoint>();
-                    
+                {   
                     GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
                     GeneralCBInterval.IsEnabled = true;
                 }
@@ -479,6 +482,8 @@ namespace My_Sync
                 //Rename columns
                 ResourceDictionary dict = this.Resources.MergedDictionaries.ToList().First();
                 int additionalWidth = 20;
+
+                if (ServerDGSynchronizationPoints.Columns.Count == 0) return;
 
                 ServerDGSynchronizationPoints.Columns[0].Header = "";
                 ServerDGSynchronizationPoints.Columns[0].MinWidth = 20;

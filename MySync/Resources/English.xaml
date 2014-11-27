@@ -43,17 +43,16 @@
     <system:String x:Key="generalIntervalHours">hours</system:String>
     
     <!-- Tab Filter -->
-    <system:String x:Key="filterDescription">File Filter Definition</system:String>
-    <system:String x:Key="filterAdd">Add</system:String>
-    <system:String x:Key="filterEdit">edit</system:String>
-    <system:String x:Key="filterDelete">Delete</system:String>
+    <system:String x:Key="filterDescription">Definition of file filters</system:String>
+    <system:String x:Key="filterAdd">+</system:String>
+    <system:String x:Key="filterDelete">-</system:String>
 
     <!-- Tab Server -->
     <system:String x:Key="serverAdd">+</system:String>
     <system:String x:Key="serverDelete">-</system:String>
     <system:String x:Key="serverDescription">Description</system:String>
-    <system:String x:Key="serverFolder">Syncronization Directory</system:String>
-    <system:String x:Key="serverEntryPoint">Server Entry Point</system:String>
+    <system:String x:Key="serverFolder">Synchronization directory</system:String>
+    <system:String x:Key="serverEntryPoint">Server entry point</system:String>
 
     <system:String x:Key="serverPopupTitle">Create a new synchronization point</system:String>
     <system:String x:Key="serverPopupCreateButton">Save as new synchronization point</system:String>
