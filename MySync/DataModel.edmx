@@ -9,6 +9,7 @@
           <EntitySet Name="FileFilter" EntityType="MySyncModel.Store.FileFilter" store:Type="Tables" />
           <EntitySet Name="History" EntityType="MySyncModel.Store.History" store:Type="Tables" />
           <EntitySet Name="ServerEntryPoint" EntityType="MySyncModel.Store.ServerEntryPoint" store:Type="Tables" />
+          <EntitySet Name="SynchronizationItem" EntityType="MySyncModel.Store.SynchronizationItem" store:Type="Tables" />
         </EntityContainer>
         <EntityType Name="FileFilter">
           <Key>
@@ -35,6 +36,24 @@
           <Property Name="folderpath" Type="nvarchar" />
           <Property Name="icon" Type="nvarchar" />
         </EntityType>
+        <EntityType Name="SynchronizationItem">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="path" Type="nvarchar" />
+          <Property Name="lastSyncTime" Type="nvarchar" />
+          <Property Name="id" Type="integer" Nullable="false" />
+          <Property Name="name" Type="nvarchar" />
+          <Property Name="extension" Type="nvarchar" />
+          <Property Name="creationTime" Type="nvarchar" />
+          <Property Name="lastAccessTime" Type="nvarchar" />
+          <Property Name="lastWriteTime" Type="nvarchar" />
+          <Property Name="size" Type="decimal" Precision="53" />
+          <Property Name="folderFlag" Type="decimal" Precision="53" />
+          <Property Name="files" Type="decimal" Precision="53" />
+          <Property Name="folders" Type="decimal" Precision="53" />
+          <Property Name="serverEntryPointId" Type="decimal" Precision="53" />
+        </EntityType>
       </Schema>
     </edmx:StorageModels>
     <!-- CSDL content -->
@@ -44,6 +63,7 @@
           <EntitySet Name="FileFilter" EntityType="MySyncModel.FileFilter" />
           <EntitySet Name="History" EntityType="MySyncModel.History" />
           <EntitySet Name="ServerEntryPoint" EntityType="MySyncModel.ServerEntryPoint" />
+          <EntitySet Name="SynchronizationItem" EntityType="MySyncModel.SynchronizationItem" />
         </EntityContainer>
         <EntityType Name="FileFilter">
           <Key>
@@ -69,6 +89,24 @@
           <Property Name="serverurl" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="folderpath" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="icon" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+        </EntityType>
+        <EntityType Name="SynchronizationItem">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int64" Nullable="false" />
+          <Property Name="serverEntryPointId" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="name" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="path" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="extension" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="creationTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="lastAccessTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="lastWriteTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="lastSyncTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="size" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="folderFlag" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="files" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="folders" Type="Decimal" Precision="53" Scale="0" />
         </EntityType>
       </Schema>
     </edmx:ConceptualModels>
@@ -101,6 +139,25 @@
                 <ScalarProperty Name="serverurl" ColumnName="serverurl" />
                 <ScalarProperty Name="folderpath" ColumnName="folderpath" />
                 <ScalarProperty Name="icon" ColumnName="icon" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SynchronizationItem">
+            <EntityTypeMapping TypeName="MySyncModel.SynchronizationItem">
+              <MappingFragment StoreEntitySet="SynchronizationItem">
+                <ScalarProperty Name="path" ColumnName="path" />
+                <ScalarProperty Name="lastSyncTime" ColumnName="lastSyncTime" />
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="extension" ColumnName="extension" />
+                <ScalarProperty Name="creationTime" ColumnName="creationTime" />
+                <ScalarProperty Name="lastAccessTime" ColumnName="lastAccessTime" />
+                <ScalarProperty Name="lastWriteTime" ColumnName="lastWriteTime" />
+                <ScalarProperty Name="size" ColumnName="size" />
+                <ScalarProperty Name="folderFlag" ColumnName="folderFlag" />
+                <ScalarProperty Name="files" ColumnName="files" />
+                <ScalarProperty Name="folders" ColumnName="folders" />
+                <ScalarProperty Name="serverEntryPointId" ColumnName="serverEntryPointId" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

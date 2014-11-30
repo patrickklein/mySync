@@ -28,5 +28,6 @@ namespace My_Sync
         public DbSet<FileFilter> FileFilter { get; set; }
         public DbSet<History> History { get; set; }
         public DbSet<ServerEntryPoint> ServerEntryPoint { get; set; }
+        public DbSet<SynchronizationItem> SynchronizationItem { get; set; }
     }
 }

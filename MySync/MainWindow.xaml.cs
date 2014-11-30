@@ -426,7 +426,7 @@ namespace My_Sync
                 //Validate inputs
                 List<bool> error = new List<bool>();
                 error.Add(ValidateGUIElement(PopupTBLServerType, (PopupTBXServerType.SelectedIndex != -1)));
-                error.Add(ValidateGUIElement(PopupTBLDescription, !String.IsNullOrEmpty(PopupTBXDescription.Text.Trim())));
+                error.Add(ValidateGUIElement(PopupTBLDescription, !String.IsNullOrEmpty(PopupTBXDescription.Text.Trim()) && !DAL.GetServerEntryPoints().Exists(x => x.Description.Equals(PopupTBXDescription.Text.Trim()))));
                 error.Add(ValidateGUIElement(PopupTBLFolder, Directory.Exists(PopupTBXFolder.Text.Trim())));
                 error.Add(ValidateGUIElement(PopupTBLServerEntryPoint, !String.IsNullOrEmpty(PopupTBXServerEntryPoint.Text.Trim())));
 
@@ -447,6 +447,8 @@ namespace My_Sync
                 //Close popup window and check for favorites folder and adds a related link
                 ClosePopup_Click(sender, e);
                 AddToFavorites_Check(sender, e);
+
+                Synchronization.AddAllFromFolder(point);
             }
         }
 
