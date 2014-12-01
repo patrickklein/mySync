@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace My_Sync.Classes
 {
-    class Synchronization
+    static class Synchronization
     {
-        private MySyncEntities dbInstance = new MySyncEntities();
+        private static MySyncEntities dbInstance = new MySyncEntities();
+        private static List<FileSystemWatcher> watcherList = new List<FileSystemWatcher>();
+        private static DateTime lastRaised;
 
         /// <summary>
         /// Adds all files and folders from a given path to the database (SynchronizationItem Table)
@@ -65,152 +68,167 @@ namespace My_Sync.Classes
                 newItem.folders = item.Folders;
                 newItem.folderFlag = Convert.ToDecimal(item.FolderFlag);
                 newItem.name = (item.FolderFlag) ? item.Directory : item.Filename;
-                newItem.path = item.FullPath;
+                newItem.path = item.FullPath.TrimEnd('\\');
                 newItem.serverEntryPointId = point.id;
 
                 DAL.AddSynchronizationItem(newItem);
             }
         }
-    }
 
-    class ItemInfo
-    {
-        private string filename;
-        private string directory;
-        private string extension;
-        private string fullPath;
-        private DateTime creationTime;
-        private DateTime lastAccessTime;
-        private DateTime lastWriteTime;
-        private long size;
-        private long files;
-        private long folders;
-        private bool folderFlag = false;
-
-        #region Getter / Setter
-
-        public string Filename
+        /// <summary>
+        /// Deletes a synchronization item from the database chosen by the given attributes
+        /// </summary>
+        /// <param name="name">filename or foldername</param>
+        /// <param name="path">full path</param>
+        public static void DeleteFromSynchronizationItem(string name, string path)
         {
-            get { return filename; }
-            set { filename = value; }
+            using (new Logger(name, path))
+            {
+                string fullPath = Path.Combine(path, name);
+
+                SynchronizationItem toDelete = dbInstance.SynchronizationItem.ToList().Single(x => x.name.Equals(name) && x.path.Equals(path));
+                dbInstance.SynchronizationItem.Remove(toDelete);
+            }
         }
 
-        public string Directory
+        #region File Watcher
+
+        /// <summary>
+        /// Creates a new File Watcher instance for the given directory path and registers the related event handlers
+        /// </summary>
+        /// <param name="directory">directory which should get be watched for changes/updates</param>
+        public static void AddWatcher(string directory)
         {
-            get { return directory; }
-            set { directory = value; }
+            using(new Logger(directory)) 
+            {
+                FileSystemWatcher fsw = new FileSystemWatcher(directory, "*.*");
+                fsw.EnableRaisingEvents = true;
+                fsw.IncludeSubdirectories = true;
+                fsw.Created += fsw_Created;
+                fsw.Changed += fsw_Changed;
+                fsw.Renamed += fsw_Renamed;
+                fsw.Deleted += fsw_Deleted;
+
+                watcherList.Add(fsw);
+            }
         }
 
-        public string Extension
+        /// <summary>
+        /// Deletes all file system watcher and creates new ones for all existing server entry points
+        /// </summary>
+        public static void RefreshWatcher()
         {
-            get { return extension; }
-            set { extension = value; }
+            using (new Logger())
+            {
+                //Creates a filewatcher for every server entry point
+                DeleteWatcher();
+                DAL.GetServerEntryPoints().ForEach(x => Synchronization.AddWatcher(x.Folder));
+            }
         }
 
-        public string FullPath
+        /// <summary>
+        /// Disposes all existing file system watchers and clears the list
+        /// </summary>
+        public static void DeleteWatcher()
         {
-            get { return fullPath; }
-            set { fullPath = value; }
+            using (new Logger())
+            {
+                watcherList.ForEach(x => x.Dispose());
+                watcherList.Clear();
+            }
         }
 
-        public DateTime CreationTime
+        /// <summary>
+        /// Eventhandler gets fired if a file or directory has been renamed
+        /// </summary>
+        /// <param name="objectRenamed">event sender</param>
+        /// <param name="e">event arguments</param>
+        private static void fsw_Renamed(object objectRenamed, RenamedEventArgs e)
         {
-            get { return creationTime; }
-            set { creationTime = value; }
+            using (new Logger(objectRenamed, e))
+            {
+                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
+                {
+                    lastRaised = DateTime.Now;
+
+                    //Delay is given to the thread for avoiding same process to be repeated
+                    Thread.Sleep(100);
+                    MessageBox.Show("renamed: " + e.Name + " " + e.OldName);
+                }
+            }
         }
 
-        public DateTime LastAccessTime
+        /// <summary>
+        /// Eventhandler gets fired if a file or directory has been deleted
+        /// </summary>
+        /// <param name="objectDeleted">event sender</param>
+        /// <param name="e">event arguments</param>
+        private static void fsw_Deleted(object objectDeleted, FileSystemEventArgs e)
         {
-            get { return lastAccessTime; }
-            set { lastAccessTime = value; }
+            using (new Logger(objectDeleted, e))
+            {
+                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
+                {
+                    lastRaised = DateTime.Now;
+
+                    //Delay is given to the thread for avoiding same process to be repeated
+                    Thread.Sleep(100);
+
+                    string name = e.FullPath.Split('\\').Last();
+                    string path = e.FullPath.Replace(name, "").TrimEnd('\\');
+                    name = (name.Contains(".")) ? name.Split('.').First() : name;
+                    
+                    DeleteFromSynchronizationItem(name, path);
+                }
+            }
         }
 
-        public DateTime LastWriteTime
+        /// <summary>
+        /// Eventhandler gets fired if a file or directory has been changed
+        /// </summary>
+        /// <param name="objectChanged">event sender</param>
+        /// <param name="e">event arguments</param>
+        private static void fsw_Changed(object objectChanged, FileSystemEventArgs e)
         {
-            get { return lastWriteTime; }
-            set { lastWriteTime = value; }
+            using (new Logger(objectChanged, e))
+            {
+                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
+                {
+                    lastRaised = DateTime.Now;
+
+                    //Delay is given to the thread for avoiding same process to be repeated
+                    Thread.Sleep(100);
+                    MessageBox.Show("changed: " + e.Name);
+                }
+            }
         }
 
-        public long Size
+        /// <summary>
+        /// Eventhandler gets fired if a file or directory has been created
+        /// </summary>
+        /// <param name="objectCreated">event sender</param>
+        /// <param name="e">event arguments</param>
+        private static void fsw_Created(object objectCreated, FileSystemEventArgs e)
         {
-            get { return size; }
-            set { size = value; }
-        }
+            using (new Logger(objectCreated, e))
+            {
+                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
+                {
+                    lastRaised = DateTime.Now;
 
-        public long Files
-        {
-            get { return files; }
-            set { files = value; }
-        }
+                    //Delay is given to the thread for avoiding same process to be repeated
+                    Thread.Sleep(100);
 
-        public long Folders
-        {
-            get { return folders; }
-            set { folders = value; }
-        }
+                    ItemInfo newItem = new ItemInfo();
+                    if (Directory.Exists(e.FullPath)) newItem.GetDirectoryInfo(e.FullPath);
+                    if (File.Exists(e.FullPath)) newItem.GetFileInfo(e.FullPath);
 
-        public bool FolderFlag
-        {
-            get { return folderFlag; }
-            set { folderFlag = value; }
+                    string description = DAL.GetServerEntryPointByPath(((FileSystemWatcher)objectCreated).Path).description;
+                    AddToDatabase(newItem, description);
+                }
+            }
         }
 
         #endregion
-
-        /// <summary>
-        /// Gets all needed file attributes for the given file
-        /// </summary>
-        /// <param name="filename">file for gathering the file attributes</param>
-        public void GetFileInfo(string filename)
-        {
-            using (new Logger(filename))
-            {
-                // Get Attributes for file
-                FileInfo info = new FileInfo(filename);
-                this.Size = info.Length;
-                this.LastAccessTime = info.LastAccessTime;
-                this.LastWriteTime = info.LastWriteTime;
-                this.CreationTime = info.CreationTime;
-                this.Filename = info.Name.Replace(info.Extension, "");
-                this.Directory = info.DirectoryName;
-                this.Extension = info.Extension;
-                this.FolderFlag = false;
-                this.FullPath = info.DirectoryName;
-            }
-        }
-
-        /// <summary>
-        /// Gets all needed directory attributes for the given path
-        /// </summary>
-        /// <param name="path">path or gathering the directory attributes</param>
-        /// <returns>directory info object with the wanted directory</returns>
-        public DirectoryInfo GetDirectoryInfo(string path)
-        {
-            using (new Logger(path))
-            {
-                // Get Attributes for directory
-                DirectoryInfo info = new DirectoryInfo(path);
-
-                try
-                {
-                    this.Size = info.GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
-                    this.LastAccessTime = info.LastAccessTime;
-                    this.LastWriteTime = info.LastWriteTime;
-                    this.CreationTime = info.CreationTime;
-                    this.Directory = info.Name;
-                    this.FullPath = info.FullName.Replace(info.Name, "");
-
-                    this.Files = info.GetFiles("*.*", SearchOption.AllDirectories).Count();
-                    this.Folders = info.GetDirectories("*", SearchOption.AllDirectories).Count();
-                    this.FolderFlag = true;
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    MessageBox.Show(ex.ToString());
-                }
-
-                return info;
-            }
-        }
     }
 }

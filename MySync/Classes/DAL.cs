@@ -61,6 +61,54 @@ namespace My_Sync.Classes
 
         //------------------------------------------------------------------------------------------------//
 
+        #region ToSync
+
+        /// <summary>
+        /// Adds a new history entry to the database
+        /// </summary>
+        /// <param name="newToSync">new entry to store in the database</param>
+        public static void AddToSync(ToSync newToSync)
+        {
+            using (new Logger(newToSync))
+            {
+                //only adds the new item, if is not in the database already
+                if(!dbInstance.ToSync.ToList().Exists(x => x.synchronizationItemId == newToSync.synchronizationItemId))
+                    dbInstance.ToSync.Add(newToSync);
+                
+                dbInstance.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Gets the next available id in the database for adding a new item
+        /// </summary>
+        /// <returns>next valid id value</returns>
+        public static long GetNextToSyncId()
+        {
+            using (new Logger())
+            {
+                int count = dbInstance.ToSync.ToList().Count;
+                if (count == 0) return count;
+                return dbInstance.ToSync.OrderBy(x => x.id).ToList().Last().id + 1;
+            }
+        }
+
+        /// <summary>
+        /// Deletes the ToSync entry from the database with the given synchronization item id
+        /// </summary>
+        /// <param name="synchronizationItemId">id to delete from the database</param>
+        public static void DeleteToSync(int synchronizationItemId)
+        {
+            using (new Logger(synchronizationItemId))
+            {
+                ToSync toDelete = dbInstance.ToSync.Single(x => x.synchronizationItemId.Equals(synchronizationItemId));
+                dbInstance.ToSync.Remove(toDelete);
+                dbInstance.SaveChanges();
+            }
+        }
+
+        #endregion
+
         #region History
 
         /// <summary>
@@ -253,6 +301,19 @@ namespace My_Sync.Classes
             using (new Logger(description))
             {
                 return dbInstance.ServerEntryPoint.Single(x => x.description.Equals(description));
+            }
+        }
+
+        /// <summary>
+        /// Gets the server entry point with the related path
+        /// </summary>
+        /// <param name="path">value to search for the wanted server entry point</param>
+        /// <returns>the found server entry point</returns>
+        public static ServerEntryPoint GetServerEntryPointByPath(string path)
+        {
+            using (new Logger(path))
+            {
+                return dbInstance.ServerEntryPoint.Single(x => x.folderpath.Equals(path));
             }
         }
 

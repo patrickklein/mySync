@@ -78,7 +78,10 @@ namespace My_Sync
                 FilterLVFilter.Columns.Clear();
                 FilterLVFilter.ItemsSource = DAL.GetFileFilters().Select(x => new { Value = x.term }).ToList();
                 HistoryRTBHistory.Document.Blocks.Clear();
-                HistoryRTBHistory.AppendText(DAL.GetHistory());               
+                HistoryRTBHistory.AppendText(DAL.GetHistory());      
+         
+                //Creates a filewatcher for every server entry point
+                DAL.GetServerEntryPoints().ForEach(x => Synchronization.AddWatcher(x.Folder));
             }
         }
 
@@ -398,6 +401,8 @@ namespace My_Sync
 
                 //Check for favorites folder and deletes the related link
                 AddToFavorites_Check(sender, e);
+
+                Synchronization.RefreshWatcher();
             }
         }
 
@@ -448,6 +453,7 @@ namespace My_Sync
                 ClosePopup_Click(sender, e);
                 AddToFavorites_Check(sender, e);
 
+                //Adds all files and directories to the database
                 Synchronization.AddAllFromFolder(point);
             }
         }

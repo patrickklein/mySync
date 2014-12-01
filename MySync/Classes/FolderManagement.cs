@@ -208,4 +208,145 @@ namespace My_Sync.Classes
             }
         }
     }
+
+    class ItemInfo
+    {
+        private string filename;
+        private string directory;
+        private string extension;
+        private string fullPath;
+        private DateTime creationTime;
+        private DateTime lastAccessTime;
+        private DateTime lastWriteTime;
+        private long size;
+        private long files;
+        private long folders;
+        private bool folderFlag = false;
+
+        #region Getter / Setter
+
+        public string Filename
+        {
+            get { return filename; }
+            set { filename = value; }
+        }
+
+        public string Directory
+        {
+            get { return directory; }
+            set { directory = value; }
+        }
+
+        public string Extension
+        {
+            get { return extension; }
+            set { extension = value; }
+        }
+
+        public string FullPath
+        {
+            get { return fullPath; }
+            set { fullPath = value; }
+        }
+
+        public DateTime CreationTime
+        {
+            get { return creationTime; }
+            set { creationTime = value; }
+        }
+
+        public DateTime LastAccessTime
+        {
+            get { return lastAccessTime; }
+            set { lastAccessTime = value; }
+        }
+
+        public DateTime LastWriteTime
+        {
+            get { return lastWriteTime; }
+            set { lastWriteTime = value; }
+        }
+
+        public long Size
+        {
+            get { return size; }
+            set { size = value; }
+        }
+
+        public long Files
+        {
+            get { return files; }
+            set { files = value; }
+        }
+
+        public long Folders
+        {
+            get { return folders; }
+            set { folders = value; }
+        }
+
+        public bool FolderFlag
+        {
+            get { return folderFlag; }
+            set { folderFlag = value; }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Gets all needed file attributes for the given file
+        /// </summary>
+        /// <param name="filename">file for gathering the file attributes</param>
+        public void GetFileInfo(string filename)
+        {
+            using (new Logger(filename))
+            {
+                // Get Attributes for file
+                FileInfo info = new FileInfo(filename);
+                this.Size = info.Length;
+                this.LastAccessTime = info.LastAccessTime;
+                this.LastWriteTime = info.LastWriteTime;
+                this.CreationTime = info.CreationTime;
+                this.Filename = info.Name.Replace(info.Extension, "");
+                this.Directory = info.DirectoryName;
+                this.Extension = info.Extension;
+                this.FolderFlag = false;
+                this.FullPath = info.DirectoryName;
+            }
+        }
+
+        /// <summary>
+        /// Gets all needed directory attributes for the given path
+        /// </summary>
+        /// <param name="path">path or gathering the directory attributes</param>
+        /// <returns>directory info object with the wanted directory</returns>
+        public DirectoryInfo GetDirectoryInfo(string path)
+        {
+            using (new Logger(path))
+            {
+                // Get Attributes for directory
+                DirectoryInfo info = new DirectoryInfo(path);
+
+                try
+                {
+                    this.Size = info.GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
+                    this.LastAccessTime = info.LastAccessTime;
+                    this.LastWriteTime = info.LastWriteTime;
+                    this.CreationTime = info.CreationTime;
+                    this.Directory = info.Name;
+                    this.FullPath = info.FullName.Replace(info.Name, "");
+
+                    this.Files = info.GetFiles("*.*", SearchOption.AllDirectories).Count();
+                    this.Folders = info.GetDirectories("*", SearchOption.AllDirectories).Count();
+                    this.FolderFlag = true;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+
+                return info;
+            }
+        }
+    }
 }

@@ -17,7 +17,6 @@ namespace My_Sync
         public long id { get; set; }
         public Nullable<decimal> serverEntryPointId { get; set; }
         public string name { get; set; }
-        public string path { get; set; }
         public string extension { get; set; }
         public string creationTime { get; set; }
         public string lastAccessTime { get; set; }
@@ -25,7 +24,10 @@ namespace My_Sync
         public string lastSyncTime { get; set; }
         public Nullable<decimal> size { get; set; }
         public Nullable<decimal> folderFlag { get; set; }
+        public Nullable<decimal> hiddenFlag { get; set; }
+        public Nullable<decimal> systemFlag { get; set; }
         public Nullable<decimal> files { get; set; }
         public Nullable<decimal> folders { get; set; }
+        public string path { get; set; }
     }
 }

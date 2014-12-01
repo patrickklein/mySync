@@ -29,5 +29,6 @@ namespace My_Sync
         public DbSet<History> History { get; set; }
         public DbSet<ServerEntryPoint> ServerEntryPoint { get; set; }
         public DbSet<SynchronizationItem> SynchronizationItem { get; set; }
+        public DbSet<ToSync> ToSync { get; set; }
     }
 }
