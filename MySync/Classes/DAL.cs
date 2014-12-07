@@ -34,6 +34,7 @@ namespace My_Sync.Classes
                         //Name of the file saved on disk
                         MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
                         string saveAsName = resourceName.Replace(mainWindow.GetType().Namespace, "").TrimStart('.');
+                        saveAsName = saveAsName.Replace("Resources.", "");
                         FileInfo fileInfoOutputFile = new FileInfo(Path.Combine(Directory.GetCurrentDirectory(), saveAsName));
 
                         if (fileInfoOutputFile.Exists) continue;
@@ -330,7 +331,7 @@ namespace My_Sync.Classes
                 dbInstance.SaveChanges();
 
                 //delete related files and folders from the synchronization item table
-                DeleteItemsFromServerEntryPoint(entryPointToDelete.id);
+                DeleteSynchronizationItem(entryPointToDelete.id);
             }
         }
 
@@ -349,6 +350,47 @@ namespace My_Sync.Classes
                 newItem.id = DAL.GetNextSynchronizationItemId();
                 dbInstance.SynchronizationItem.Add(newItem);
                 dbInstance.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Updates a synchronization item in the database with the passed item
+        /// </summary>
+        /// <param name="changedItem">item with updated values</param>
+        public static void UpdateSynchronizationItem(SynchronizationItem changedItem)
+        {
+            using (new Logger(changedItem))
+            {
+                SynchronizationItem item = dbInstance.SynchronizationItem.ToList().Single(x => x.id == changedItem.id);
+                item = changedItem;
+                dbInstance.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Returns a synchronization item object based on the stored fullname and path
+        /// </summary>
+        /// <param name="fullname">name of the file/folder</param>
+        /// <param name="path">full path of the file/folder</param>
+        /// <returns>found synchronization item object</returns>
+        public static SynchronizationItem GetSynchronizationItem(string fullname, string path)
+        {
+            using (new Logger(fullname, path))
+            {
+                return dbInstance.SynchronizationItem.ToList().Single(x => x.fullname.Equals(fullname) && x.path.Equals(path));
+            }
+        }
+
+        /// <summary>
+        /// Returns a list of synchronization item objects based on the given path
+        /// </summary>
+        /// <param name="path">full path of the file/folder</param>
+        /// <returns>list of found synchronization item objects</returns>
+        public static List<SynchronizationItem> GetSynchronizationItems(string path)
+        {
+            using (new Logger(path))
+            {
+                return dbInstance.SynchronizationItem.ToList().Where(x => x.path.StartsWith(path)).ToList();
             }
         }
 
@@ -392,10 +434,10 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
-        /// Deletes the file entry from the database with the given filename
+        /// Deletes the entry from the database with the given filename
         /// </summary>
         /// <param name="fullFileName">entry to delete from the database</param>
-        public static void DeleteItem(string fullFileName)
+        public static void DeleteSynchronizationItem(string fullFileName)
         {
             using (new Logger(fullFileName))
             {
@@ -406,10 +448,24 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
+        /// Deletes the entry from the database with the given filename
+        /// </summary>
+        /// <param name="item">item which should be delete from the database</param>
+        public static void DeleteSynchronizationItem(SynchronizationItem item)
+        {
+            using (new Logger(item))
+            {
+                SynchronizationItem itemToDelete = dbInstance.SynchronizationItem.Single(x => x.id == item.id);
+                dbInstance.SynchronizationItem.Remove(itemToDelete);
+                dbInstance.SaveChanges();
+            }
+        }
+
+        /// <summary>
         /// Deletes the entries from the database with the given id of the server entry point
         /// </summary>
         /// <param name="serverEntryPointId">id which entries should be deleted from the database</param>
-        public static void DeleteItemsFromServerEntryPoint(long serverEntryPointId)
+        public static void DeleteSynchronizationItem(long serverEntryPointId)
         {
             using (new Logger(serverEntryPointId))
             {

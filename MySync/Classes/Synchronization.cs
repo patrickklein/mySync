@@ -13,7 +13,6 @@ namespace My_Sync.Classes
     {
         private static MySyncEntities dbInstance = new MySyncEntities();
         private static List<FileSystemWatcher> watcherList = new List<FileSystemWatcher>();
-        private static DateTime lastRaised;
 
         /// <summary>
         /// Adds all files and folders from a given path to the database (SynchronizationItem Table)
@@ -24,14 +23,14 @@ namespace My_Sync.Classes
             using (new Logger(entryPoint))
             {
                 ItemInfo info = new ItemInfo();
-                DirectoryInfo dirInfo = info.GetDirectoryInfo(entryPoint.Folder);
+                DirectoryInfo dirInfo = (DirectoryInfo)info.GetInfo(entryPoint.Folder);
 
                 //All files
                 FileInfo[] fileInfo = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
                 foreach (FileInfo file in fileInfo)
                 {
                     ItemInfo tempInfo = new ItemInfo();
-                    tempInfo.GetFileInfo(file.FullName);
+                    tempInfo.GetInfo(file.FullName);
                     AddToDatabase(tempInfo, entryPoint.Description);
                 }
 
@@ -40,7 +39,7 @@ namespace My_Sync.Classes
                 foreach (DirectoryInfo directory in directoryInfo)
                 {
                     ItemInfo tempInfo = new ItemInfo();
-                    tempInfo.GetDirectoryInfo(directory.FullName);
+                    tempInfo.GetInfo(directory.FullName);
                     AddToDatabase(tempInfo, entryPoint.Description);
                 }
             }
@@ -55,10 +54,27 @@ namespace My_Sync.Classes
         {
             using (new Logger(item, serverDescription))
             {
-                string timeFormat = "yyyy/MM/dd HH:mm:ss";
+                SynchronizationItem newItem = ItemInfoToSyncItem(item, new SynchronizationItem());
 
                 ServerEntryPoint point = DAL.GetServerEntryPoint(serverDescription);
-                SynchronizationItem newItem = new SynchronizationItem();
+                newItem.serverEntryPointId = point.id;
+
+                DAL.AddSynchronizationItem(newItem);
+            }
+        }
+
+        /// <summary>
+        /// Converts a given ItemInfo object into a SynchronizationItem
+        /// </summary>
+        /// <param name="item">ItemInfo object</param>
+        /// <param name="newItem">SynchronizationItem object</param>
+        /// <returns>the converted SynchronizationItem object</returns>
+        private static SynchronizationItem ItemInfoToSyncItem(ItemInfo item, SynchronizationItem newItem)
+        {
+            using (new Logger(item, newItem))
+            {
+                string timeFormat = "yyyy/MM/dd HH:mm:ss";
+
                 newItem.creationTime = item.CreationTime.ToString(timeFormat);
                 newItem.lastAccessTime = item.LastAccessTime.ToString(timeFormat);
                 newItem.lastWriteTime = item.LastWriteTime.ToString(timeFormat);
@@ -68,10 +84,33 @@ namespace My_Sync.Classes
                 newItem.folders = item.Folders;
                 newItem.folderFlag = Convert.ToDecimal(item.FolderFlag);
                 newItem.name = (item.FolderFlag) ? item.Directory : item.Filename;
+                newItem.fullname = item.FullName;
                 newItem.path = item.FullPath.TrimEnd('\\');
-                newItem.serverEntryPointId = point.id;
 
-                DAL.AddSynchronizationItem(newItem);
+                return newItem;
+            }
+        }
+
+        /// <summary>
+        /// Updates a synchronisation item in the database
+        /// </summary>
+        /// <param name="oldName">old name of file/folder</param>
+        /// <param name="newName">new name of file/folder (if empty it gets the value from oldName)</param>
+        /// <param name="path">full path of file/folder</param>
+        public static void UpdateSynchronizationItem(string path, string oldName, string newName = "")
+        {
+            using (new Logger(path, oldName, newName))
+            {
+                if (String.IsNullOrEmpty(newName)) newName = oldName;
+                string parentPath = path.Replace(path.Split('\\').Last(), "").TrimEnd('\\');
+                oldName = (oldName.Contains('\\')) ? oldName.Split('\\').Last() : oldName;
+                newName = (newName.Contains('\\')) ? newName.Split('\\').Last() : newName;
+
+                SynchronizationItem toRename = DAL.GetSynchronizationItem(oldName, parentPath);
+                ItemInfo item = new ItemInfo();
+                item.GetInfo(path);
+                toRename = ItemInfoToSyncItem(item, toRename);
+                DAL.UpdateSynchronizationItem(toRename);
             }
         }
 
@@ -80,14 +119,22 @@ namespace My_Sync.Classes
         /// </summary>
         /// <param name="name">filename or foldername</param>
         /// <param name="path">full path</param>
-        public static void DeleteFromSynchronizationItem(string name, string path)
+        public static void DeleteSynchronizationItem(string name, string path)
         {
             using (new Logger(name, path))
             {
-                string fullPath = Path.Combine(path, name);
+                SynchronizationItem toDelete = DAL.GetSynchronizationItem(name, path);
 
-                SynchronizationItem toDelete = dbInstance.SynchronizationItem.ToList().Single(x => x.name.Equals(name) && x.path.Equals(path));
-                dbInstance.SynchronizationItem.Remove(toDelete);
+                //if it was a folder, delete all contained files/folder 
+                if (Convert.ToBoolean(toDelete.folderFlag))
+                {
+                    string fullPath = Path.Combine(toDelete.path, toDelete.fullname);
+                    List<SynchronizationItem> items = DAL.GetSynchronizationItems(fullPath);
+                    foreach(SynchronizationItem item in items)
+                        DAL.DeleteSynchronizationItem(item);
+                }
+
+                DAL.DeleteSynchronizationItem(toDelete);
             }
         }
 
@@ -147,14 +194,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(objectRenamed, e))
             {
-                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
-                {
-                    lastRaised = DateTime.Now;
-
-                    //Delay is given to the thread for avoiding same process to be repeated
-                    Thread.Sleep(100);
-                    MessageBox.Show("renamed: " + e.Name + " " + e.OldName);
-                }
+                //Delay is given to the thread for avoiding same process to be repeated
+                Thread.Sleep(100);
+                UpdateSynchronizationItem(e.FullPath, e.OldName, e.Name);
             }
         }
 
@@ -167,19 +209,12 @@ namespace My_Sync.Classes
         {
             using (new Logger(objectDeleted, e))
             {
-                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
-                {
-                    lastRaised = DateTime.Now;
+                //Delay is given to the thread for avoiding same process to be repeated
+                Thread.Sleep(100);
 
-                    //Delay is given to the thread for avoiding same process to be repeated
-                    Thread.Sleep(100);
-
-                    string name = e.FullPath.Split('\\').Last();
-                    string path = e.FullPath.Replace(name, "").TrimEnd('\\');
-                    name = (name.Contains(".")) ? name.Split('.').First() : name;
-                    
-                    DeleteFromSynchronizationItem(name, path);
-                }
+                string name = e.FullPath.Split('\\').Last();
+                string path = e.FullPath.Replace(name, "").TrimEnd('\\');
+                DeleteSynchronizationItem(name, path);
             }
         }
 
@@ -192,14 +227,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(objectChanged, e))
             {
-                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
-                {
-                    lastRaised = DateTime.Now;
-
-                    //Delay is given to the thread for avoiding same process to be repeated
-                    Thread.Sleep(100);
-                    MessageBox.Show("changed: " + e.Name);
-                }
+                //Delay is given to the thread for avoiding same process to be repeated
+                Thread.Sleep(100);
+                UpdateSynchronizationItem(e.FullPath, e.Name);
             }
         }
 
@@ -212,20 +242,13 @@ namespace My_Sync.Classes
         {
             using (new Logger(objectCreated, e))
             {
-                if (DateTime.Now.Subtract(lastRaised).TotalMilliseconds > 1000)
-                {
-                    lastRaised = DateTime.Now;
+                //Delay is given to the thread for avoiding same process to be repeated
+                Thread.Sleep(100);
+                ItemInfo newItem = new ItemInfo();
+                newItem.GetInfo(e.FullPath);
 
-                    //Delay is given to the thread for avoiding same process to be repeated
-                    Thread.Sleep(100);
-
-                    ItemInfo newItem = new ItemInfo();
-                    if (Directory.Exists(e.FullPath)) newItem.GetDirectoryInfo(e.FullPath);
-                    if (File.Exists(e.FullPath)) newItem.GetFileInfo(e.FullPath);
-
-                    string description = DAL.GetServerEntryPointByPath(((FileSystemWatcher)objectCreated).Path).description;
-                    AddToDatabase(newItem, description);
-                }
+                string description = DAL.GetServerEntryPointByPath(((FileSystemWatcher)objectCreated).Path).description;
+                AddToDatabase(newItem, description);
             }
         }
 

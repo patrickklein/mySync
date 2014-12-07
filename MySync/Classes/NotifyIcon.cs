@@ -102,6 +102,30 @@ namespace My_Sync.Classes
             }
         }
 
+        /// <summary>
+        /// Defines if the window is shown or not
+        /// </summary>
+        /// <param name="show">yes/no</param>
+        public void ShowWindow(bool show)
+        {
+            using (new Logger(show))
+            {
+                if (show)
+                {
+                    mainWindow.ShowInTaskbar = false;
+                    mainWindow.Show();
+                    mainWindow.Visibility = Visibility.Visible;
+                    mainWindow.WindowState = WindowState.Normal;
+                }
+                else
+                {
+                    mainWindow.WindowState = WindowState.Minimized;
+                    mainWindow.Visibility = Visibility.Hidden;
+                    mainWindow.ShowInTaskbar = false;
+                }
+            }
+        }
+
         #region Eventhandler
 
         /// <summary>
@@ -128,19 +152,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(sender, e))
             {
-                if (mainWindow.ShowInTaskbar)
-                {
-                    mainWindow.WindowState = WindowState.Minimized;
-                    mainWindow.Visibility = Visibility.Hidden;
-                    mainWindow.ShowInTaskbar = false;
-                }
-                else
-                {
-                    mainWindow.ShowInTaskbar = true;
-                    mainWindow.Show();
-                    mainWindow.Visibility = Visibility.Visible;
-                    mainWindow.WindowState = WindowState.Normal;
-                }
+                ShowWindow(mainWindow.Visibility != Visibility.Visible);
             }
         }
 

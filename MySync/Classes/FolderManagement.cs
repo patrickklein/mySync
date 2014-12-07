@@ -212,6 +212,7 @@ namespace My_Sync.Classes
     class ItemInfo
     {
         private string filename;
+        private string fullName;
         private string directory;
         private string extension;
         private string fullPath;
@@ -229,6 +230,12 @@ namespace My_Sync.Classes
         {
             get { return filename; }
             set { filename = value; }
+        }
+
+        public string FullName
+        {
+            get { return fullName; }
+            set { fullName = value; }
         }
 
         public string Directory
@@ -294,51 +301,45 @@ namespace My_Sync.Classes
         #endregion
 
         /// <summary>
-        /// Gets all needed file attributes for the given file
+        /// Gets all needed file or directory attributes for the given path
         /// </summary>
-        /// <param name="filename">file for gathering the file attributes</param>
-        public void GetFileInfo(string filename)
+        /// <param name="fullName">path for gathering the attributes</param>
+        /// <returns>file system info object with the needed directory/file attributes</returns>
+        public FileSystemInfo GetInfo(string fullName)
         {
-            using (new Logger(filename))
-            {
-                // Get Attributes for file
-                FileInfo info = new FileInfo(filename);
-                this.Size = info.Length;
-                this.LastAccessTime = info.LastAccessTime;
-                this.LastWriteTime = info.LastWriteTime;
-                this.CreationTime = info.CreationTime;
-                this.Filename = info.Name.Replace(info.Extension, "");
-                this.Directory = info.DirectoryName;
-                this.Extension = info.Extension;
-                this.FolderFlag = false;
-                this.FullPath = info.DirectoryName;
-            }
-        }
-
-        /// <summary>
-        /// Gets all needed directory attributes for the given path
-        /// </summary>
-        /// <param name="path">path or gathering the directory attributes</param>
-        /// <returns>directory info object with the wanted directory</returns>
-        public DirectoryInfo GetDirectoryInfo(string path)
-        {
-            using (new Logger(path))
+            using (new Logger(fullName))
             {
                 // Get Attributes for directory
-                DirectoryInfo info = new DirectoryInfo(path);
+                FileSystemInfo info = null;
 
                 try
                 {
-                    this.Size = info.GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
+                    //get attributes for file
+                    if (new FileInfo(fullName).Exists)
+                    {
+                        info = new FileInfo(fullName);
+                        this.FolderFlag = false;
+                        this.Size = ((FileInfo)info).Length;
+                        this.Directory = ((FileInfo)info).DirectoryName;
+                        this.Extension = info.Extension;
+                        this.FullPath = ((FileInfo)info).DirectoryName.TrimEnd('\\');
+                        this.Filename = info.Name.Replace(info.Extension, "");
+                    }
+
+                    //get attributes for directory
+                    if (new DirectoryInfo(fullName).Exists)
+                    {
+                        info = new DirectoryInfo(fullName);
+                        this.FolderFlag = true;
+                        this.Size = ((DirectoryInfo)info).GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
+                        this.Directory = info.Name;
+                        this.FullPath = info.FullName.Replace(info.Name, "").TrimEnd('\\');
+                    }
+
                     this.LastAccessTime = info.LastAccessTime;
                     this.LastWriteTime = info.LastWriteTime;
                     this.CreationTime = info.CreationTime;
-                    this.Directory = info.Name;
-                    this.FullPath = info.FullName.Replace(info.Name, "");
-
-                    this.Files = info.GetFiles("*.*", SearchOption.AllDirectories).Count();
-                    this.Folders = info.GetDirectories("*", SearchOption.AllDirectories).Count();
-                    this.FolderFlag = true;
+                    this.FullName = info.Name;
                 }
                 catch (UnauthorizedAccessException ex)
                 {

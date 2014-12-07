@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -36,28 +38,33 @@ namespace My_Sync
         {
             using (new Logger())
             {
-                InitializeComponent();
-                InitializeObjects();
-                InitializePopup();
+                try
+                {
+                    InitializeComponent();
+                    InitializeObjects();
+                    InitializePopup();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
 
                 //notifyIcon.ChangeIcon("Upload");
                 //notifyIcon.ChangeIcon("Download");
                 //notifyIcon.ResetIcon();
                 //CheckInternetConnection.IsConnected
-
-                //SyncItemInfo temp = new SyncItemInfo();
-                //temp.GetFileInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\Zeitaufzeichnung.xlsx");
-                //temp.GetDirectoryInfo(@"D:\Studium\MSC - Softwareentwicklung\3. Semester\Master Projekt\Projekt\");
             }
         }
 
         /// <summary>
         /// Initialize all needed objects for GUI and synchronisation
         /// </summary>
-        private void InitializeObjects()
+        /// <param name="reinitialization">defines if it is the first initialization or not</param>
+        private void InitializeObjects(bool reinitialization = false)
         {
-            using (new Logger())
+            using (new Logger(reinitialization))
             {
+                //Set user language, create database and name all elements
                 SetLanguageDictionary(MySync.Default.usedLanguage);
                 DAL.CreateDatabase();
 
@@ -70,7 +77,11 @@ namespace My_Sync
                 GeneralCBXFastSync.IsChecked = MySync.Default.fastSync;
 
                 //Notification Icon
-                notifyIcon.InitializeNotifyIcon();
+                if (!reinitialization)
+                {
+                    notifyIcon.InitializeNotifyIcon();
+                    notifyIcon.ShowWindow(false);
+                }
 
                 //Fill GUI for Server Entry Point, File Filter, History
                 ServerDGSynchronizationPoints.Columns.Clear();
@@ -136,9 +147,9 @@ namespace My_Sync
 
                 switch (cultureCode)
                 {
-                    case "de-AT": dict.Source = new Uri(@"..\Resources\German.xaml",  UriKind.Relative); break;
-                    case "en-US": dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
-                    default:      dict.Source = new Uri(@"..\Resources\English.xaml", UriKind.Relative); break;
+                    case "de-AT": dict.Source = new Uri(@"..\Resources\Language\German.xaml",  UriKind.Relative); break;
+                    case "en-US": dict.Source = new Uri(@"..\Resources\Language\English.xaml", UriKind.Relative); break;
+                    default: dict.Source = new Uri(@"..\Resources\Language\English.xaml", UriKind.Relative); break;
                 }
 
                 this.Resources.MergedDictionaries.Clear();
@@ -150,6 +161,25 @@ namespace My_Sync
 
         #region General Tab
 
+        public void test()
+        {
+            using (var client = new HttpClient())
+            {
+                using (var content = new MultipartFormDataContent())
+                {
+                    var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(@"C:\Users\Patrick\Desktop\Hive Operators and Functions.mp4"));
+                    fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                    {
+                        FileName = "Hive Operators and Functions.mp4",
+                        Name = "UploadedFile"
+                    };
+                    content.Add(fileContent);
+
+                    var requestUri = "http://localhost:51992/Account/Upload";
+                    var result = client.PostAsync(requestUri, content).Result;
+                }
+            }
+        }
         /// <summary>
         /// Changes the app language to the selected one and saves the chosen value in the settings file
         /// </summary>
@@ -167,7 +197,7 @@ namespace My_Sync
                 //save selection to settings
                 Helper.SaveSetting("usedLanguage", uid);
 
-                InitializeObjects();
+                InitializeObjects(true);
             }
         }
 
@@ -209,7 +239,8 @@ namespace My_Sync
                     GeneralCBInterval.IsEnabled = false;
                 }
                 else
-                {   
+                {
+                    test();
                     GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
                     GeneralCBInterval.IsEnabled = true;
                 }
@@ -455,6 +486,7 @@ namespace My_Sync
 
                 //Adds all files and directories to the database
                 Synchronization.AddAllFromFolder(point);
+                Synchronization.RefreshWatcher();
             }
         }
 
@@ -513,6 +545,19 @@ namespace My_Sync
         #endregion
 
         /// <summary>
+        /// Minimizes the application
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void WindowBTNMinimize(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                notifyIcon.ShowWindow(false);
+            }
+        }
+
+        /// <summary>
         /// Exits the application and saves all changed values
         /// </summary>
         /// <param name="sender">event sender</param>
@@ -563,9 +608,9 @@ namespace My_Sync
             {
                 if (condition) guiLabel.Foreground = Brushes.Black;
                 else guiLabel.Foreground = Brushes.Red;
-            }
 
-            return condition;
+                return condition;
+            }
         }
     }
 }
