@@ -9249,7 +9249,8 @@ window.jQuery = window.$ = jQuery;
 // understand the issues with loading multiple versions of jQuery
 // in a page that all might call define(). The loader will indicate
 // they have special allowances for multiple jQuery versions by
-// specifying define.amd.jQuery = true. Register as a named module,
+// specifying define.amd.jQuery = true. 
+ as a named module,
 // since jQuery can be concatenated with other files that may use define,
 // but not use a proper concatenation script that understands anonymous
 // AMD modules. A named AMD is safest and most robust way to register.

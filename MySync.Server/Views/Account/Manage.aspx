@@ -1,7 +1,7 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Views/Shared/Site.Master" Inherits="System.Web.Mvc.ViewPage<MySync.Server.Models.LocalPasswordModel>" %>
 
 <asp:Content ID="manageTitle" ContentPlaceHolderID="TitleContent" runat="server">
-    Manage Account
+    <%: (string)base.RouteData.Values["title"] %>
 </asp:Content>
 
 <asp:Content ID="manageContent" ContentPlaceHolderID="MainContent" runat="server">
@@ -18,13 +18,6 @@
     } else {
         Html.RenderPartial("_SetPasswordPartial");
     } %>
-
-    <section id="externalLogins">
-        <%: Html.Action("RemoveExternalLogins") %>
-
-        <h3>Add an external login</h3>
-        <%: Html.Action("ExternalLoginsList", new { ReturnUrl = ViewBag.ReturnUrl }) %>
-    </section>
 </asp:Content>
 
 <asp:Content ID="scriptsContent" ContentPlaceHolderID="ScriptsSection" runat="server">

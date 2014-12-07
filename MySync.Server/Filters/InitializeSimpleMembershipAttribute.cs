@@ -23,6 +23,7 @@ namespace MySync.Server.Filters
 
         private class SimpleMembershipInitializer
         {
+            /*
             public SimpleMembershipInitializer()
             {
                 Database.SetInitializer<UsersContext>(null);
@@ -45,6 +46,7 @@ namespace MySync.Server.Filters
                     throw new InvalidOperationException("The ASP.NET Simple Membership database could not be initialized. For more information, please see http://go.microsoft.com/fwlink/?LinkId=256588", ex);
                 }
             }
+             * */
         }
     }
 }

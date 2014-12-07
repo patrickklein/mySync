@@ -1,15 +1,19 @@
-﻿html {
+﻿@font-face {
+    font-family:Dosis;
+    src: url('dosis.light.ttf');
+}
+
+html {
     background-color: #e2e2e2;
     margin: 0;
     padding: 0;
 }
 
 body {
-    background-color: #fff;
-    border-top: solid 10px #000;
+    background-color: #333;
     color: #333;
-    font-size: .85em;
-    font-family: "Segoe UI", Verdana, Helvetica, Sans-Serif;
+    font-size: 12pt;
+    font-family: Dosis, "Segoe UI", Verdana, Helvetica, Sans-Serif;
     margin: 0;
     padding: 0;
 }
@@ -22,8 +26,7 @@ a {
     text-decoration: underline;
 }
 
-    a:link, a:visited,
-    a:active, a:hover {
+    a:link, a:visited, a:active, a:hover {
         color: #333;
     }
 
@@ -31,8 +34,7 @@ a {
         background-color: #c7d1d6;
     }
 
-header, footer, hgroup,
-nav, section {
+header, footer, hgroup, nav, section {
     display: block;
 }
 
@@ -58,8 +60,7 @@ mark {
     visibility: hidden;
 }
 
-h1, h2, h3,
-h4, h5, h6 {
+h1, h2, h3, h4, h5, h6 {
     color: #000;
     margin-bottom: 0;
     padding-bottom: 0;
@@ -130,7 +131,7 @@ footer {
 ----------------------------------------------------------*/
 .site-title {
     color: #c8c8c8;
-    font-family: Rockwell, Consolas, "Courier New", Courier, monospace;
+    font-family: Dosis, Rockwell, Consolas, "Courier New", Courier, monospace;
     font-size: 2.3em;
     margin: 0;
 }
@@ -195,12 +196,12 @@ ul#menu {
 
         ul#menu li a {
             background: none;
-            color: #999;
+            color: #b9b6b6;
             text-decoration: none;
         }
 
         ul#menu li a:hover {
-            color: #333;
+            color: #fff;
             text-decoration: none;
         }
 
@@ -330,9 +331,8 @@ aside {
 
 /* login page */
 #loginForm {
-    border-right: solid 2px #c8c8c8;
     float: left;
-    width: 55%;
+    width: 85%;
 }
 
     #loginForm .validation-error {

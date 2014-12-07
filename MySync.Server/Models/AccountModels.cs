@@ -2,16 +2,51 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Configuration;
 using System.Data.Entity;
 using System.Globalization;
+using System.Web.Configuration;
 using System.Web.Security;
 
 namespace MySync.Server.Models
 {
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+    public class FileSizeAttribute : DataTypeAttribute 
+    {
+        public FileSizeAttribute() : base("integer") { }
+
+        public override string FormatErrorMessage(string name)
+        {
+            if(ErrorMessage == null && ErrorMessageResourceName == null)
+            {
+                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                ErrorMessage = String.Format("Please enter a valid number between {0} and {1}.", 0, section.MaxRequestLength / 1024);
+            }
+
+ 	        return base.FormatErrorMessage(name);
+        }
+
+        public override bool IsValid(object value)
+        {
+            //if empty
+            if(value == null) return true;
+
+            //check if value is an integer value
+            int retNum;
+            bool parse = int.TryParse(Convert.ToString(value), out retNum);
+
+            //check if value is lower than maximum allowed
+            HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+            int maxFilesize = section.MaxRequestLength / 1024;
+            if ((retNum < 0 || retNum > maxFilesize) || !parse) return false;
+
+            return true;
+        }
+    }
+
     public class UsersContext : DbContext
     {
-        public UsersContext()
-            : base("DefaultConnection")
+        public UsersContext() : base("DefaultConnection")
         {
         }
 
@@ -25,15 +60,6 @@ namespace MySync.Server.Models
         [DatabaseGeneratedAttribute(DatabaseGeneratedOption.Identity)]
         public int UserId { get; set; }
         public string UserName { get; set; }
-    }
-
-    public class RegisterExternalLoginModel
-    {
-        [Required]
-        [Display(Name = "User name")]
-        public string UserName { get; set; }
-
-        public string ExternalLoginData { get; set; }
     }
 
     public class LocalPasswordModel
@@ -65,17 +91,24 @@ namespace MySync.Server.Models
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; }
-
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
     }
 
-    public class RegisterModel
+    public class SetupModel
     {
         [Required]
-        [Display(Name = "User name")]
-        public string UserName { get; set; }
+        [Display(Name = "Path for data saving")]
+        public string Path { get; set; }
 
+        [Required]
+        [Display(Name = "Maximum allowed file size")]
+        [FileSize]
+        public int FileSize { get; set; }
+
+        [Required]
+        [Display(Name = "Maximum available disk space for synchronization")]
+        [FileSize]
+        public int DiskSpace { get; set; }
+        /*
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
@@ -85,13 +118,6 @@ namespace MySync.Server.Models
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; }
-    }
-
-    public class ExternalLogin
-    {
-        public string Provider { get; set; }
-        public string ProviderDisplayName { get; set; }
-        public string ProviderUserId { get; set; }
+        public string ConfirmPassword { get; set; }*/
     }
 }

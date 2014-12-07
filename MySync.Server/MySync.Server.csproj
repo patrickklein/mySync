@@ -156,7 +156,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="App_Start\AuthConfig.cs" />
+    <Compile Include="App_Start\AuthConfig.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
@@ -227,7 +229,13 @@
     <Content Include="Content\themes\base\minified\jquery.ui.theme.min.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
+    <Content Include="Content\dosis.light.ttf" />
     <None Include="Scripts\jquery-1.7.1.intellisense.js" />
+    <Content Include="Images\license\Attribution.png" />
+    <Content Include="Images\license\license.png" />
+    <Content Include="Images\license\NonCommercial.png" />
+    <Content Include="Images\license\ShareAlike.png" />
+    <Content Include="Images\logo.png" />
     <Content Include="Scripts\jquery-1.7.1.js" />
     <Content Include="Scripts\jquery-1.7.1.min.js" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
@@ -242,6 +250,7 @@
     <Content Include="Scripts\knockout-2.1.0.debug.js" />
     <Content Include="Scripts\knockout-2.1.0.js" />
     <Content Include="Scripts\modernizr-2.5.3.js" />
+    <Content Include="Views\Account\Setup.aspx" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -264,20 +273,11 @@
     <Content Include="Images\orderedList7.png" />
     <Content Include="Images\orderedList8.png" />
     <Content Include="Images\orderedList9.png" />
-    <Content Include="Views\Account\_ChangePasswordPartial.aspx" />
-    <Content Include="Views\Account\_ExternalLoginsListPartial.aspx" />
-    <Content Include="Views\Account\_RemoveExternalLoginsPartial.aspx" />
-    <Content Include="Views\Account\_SetPasswordPartial.aspx" />
     <Content Include="Views\Account\Login.aspx" />
     <Content Include="Views\Account\Manage.aspx" />
-    <Content Include="Views\Account\Register.aspx" />
-    <Content Include="Views\Account\ExternalLoginFailure.aspx" />
-    <Content Include="Views\Account\ExternalLoginConfirmation.aspx" />
     <Content Include="Views\Home\About.aspx" />
-    <Content Include="Views\Home\Contact.aspx" />
     <Content Include="Views\Home\Index.aspx" />
     <Content Include="Views\Shared\Error.aspx" />
-    <Content Include="Views\Shared\_LoginPartial.aspx" />
     <Content Include="Views\Shared\Site.Master" />
     <Content Include="Views\Web.config" />
   </ItemGroup>

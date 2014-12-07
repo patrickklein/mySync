@@ -1,51 +1,47 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Views/Shared/Site.Master" Inherits="System.Web.Mvc.ViewPage" %>
 
 <asp:Content ID="indexTitle" ContentPlaceHolderID="TitleContent" runat="server">
-    Home Page - My ASP.NET MVC Application
-</asp:Content>
-
-<asp:Content ID="indexFeatured" ContentPlaceHolderID="FeaturedContent" runat="server">
-    <section class="featured">
-        <div class="content-wrapper">
-            <hgroup class="title">
-                <h1>Home Page.</h1>
-                <h2><%: ViewBag.Message %></h2>
-            </hgroup>
-            <p>
-                To learn more about ASP.NET MVC visit
-                <a href="http://asp.net/mvc" title="ASP.NET MVC Website">http://asp.net/mvc</a>.
-                The page features <mark>videos, tutorials, and samples</mark> to help you get the most from ASP.NET MVC.
-                If you have any questions about ASP.NET MVC visit
-                <a href="http://forums.asp.net/1146.aspx/1?MVC" title="ASP.NET MVC Forum">our forums</a>.
-            </p>
-        </div>
-    </section>
+    <%: (string)base.RouteData.Values["title"] %>
 </asp:Content>
 
 <asp:Content ID="indexContent" ContentPlaceHolderID="MainContent" runat="server">
-    <h3>We suggest the following:</h3>
+    <br />
+    <hgroup class="title">
+        <h1>How does it work:</h1>
+    </hgroup>
     <ol class="round">
         <li class="one">
             <h5>Getting Started</h5>
-            ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and that gives you full control over markup
-            for enjoyable, agile development. ASP.NET MVC includes many features that enable
-            fast, TDD-friendly development for creating sophisticated applications that use
-            the latest web standards.
-            <a href="http://go.microsoft.com/fwlink/?LinkId=245151">Learn more…</a>
+            Congratulations, you have successfully installed and set up <b>mySync Server Management</b>. 
+            Follow the next steps to setup your synchronization environment correctly. No warranties are given for anything.
+            For a correct usage of mySync, please ensure you have installed a PostgreSQL database instance on your server, reachable with standard login credentials (xxx:xxx).
         </li>
 
+        <!--<li class="two">
+            <h5>Login at mySync server management and setup an entry point</h5>
+            Go to the <%: Html.ActionLink("login section", "Login", "Account") %> and sign in on the server management with the provided credentials on the login page. (After signing in, you can change the password if you want to) Set up a new server entry point for the client application, by providing a valid path as data storage. The created server entry point is now available with following URI: <b>http://xxx.xxx.xxx.xxx/synchronization/entryPoint</b>
+        </li>-->
+
         <li class="two">
-            <h5>Add NuGet packages and jump-start your coding</h5>
-            NuGet makes it easy to install and update free libraries and tools.
-            <a href="http://go.microsoft.com/fwlink/?LinkId=245153">Learn more…</a>
+            <h5>setup an entry point</h5>
+            Go to the <%: Html.ActionLink("setup section", "Setup", "Account") %> and set up a new server entry point for the client application, by providing a valid path as data storage. The created server entry point is now available with the following URI: <b>http://xxx.xxx.xxx.xxx/synchronization/entryPoint</b>
         </li>
 
         <li class="three">
-            <h5>Find Web Hosting</h5>
-            You can easily find a web hosting company that offers the right mix of features
-            and price for your applications.
-            <a href="http://go.microsoft.com/fwlink/?LinkId=245157">Learn more…</a>
+            <h5>Download mySync client application</h5>
+            You have to download the <b>mySync client application</b> and install it on an appropriate machine. This application was developed and tested for usage on Microsoft Windows 7 (64-bit) systems, but should work with other Microsoft Windows Versions too.
+            You also need to install <b>Microsofts .NET 4.5 Framework</b>, to get the client application run.<br /><br />
+            <a href="http://github.com/mySync/mySync.Client" target="_blank">download client application…</a>
+        </li>
+
+        <li class="four">
+            <h5>Configure mySync client application</h5>
+            Start the mySync client application on the client/user machine and navigate to the <b>"Server" tab</b>. Add a new "Server Entry Point" by clicking the + sign in the bottom right and <b>paste the server entry URI from step two</b> into the <b>"Server Address" textbox</b>. Define which local folder should get sychronized with this server and save the changes. The client should start checking the files and folders and synchronizing the data to the server.
+        </li>
+
+        <li class="five">
+            <h5>Enjoy...</h5>
+            have fun and happy sharing your data with your own server
         </li>
     </ol>
 </asp:Content>

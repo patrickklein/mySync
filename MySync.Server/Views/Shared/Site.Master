@@ -13,17 +13,20 @@
         <header>
             <div class="content-wrapper">
                 <div class="float-left">
-                    <p class="site-title"><%: Html.ActionLink("your logo here", "Index", "Home") %></p>
+                    <div class="site-title">
+                        <a href="<%: Url.Action("Index", "Home") %>">
+                            <img style="margin-top:14px;margin-left:-2px" height="50" src="/Images/logo.png" />&nbsp;&nbsp;
+                            <span style="font-family:Dosis;font-size:36pt;color:#fff;vertical-align:top">mySync - Server Management</span>
+                        </a>
+                    </div>
                 </div>
-                <div class="float-right">
-                    <section id="login">
-                        <%: Html.Partial("_LoginPartial") %>
-                    </section>
+                <div class="float-right"><br />
                     <nav>
                         <ul id="menu">
                             <li><%: Html.ActionLink("Home", "Index", "Home") %></li>
+                            <!--<li><%: Html.ActionLink("Login", "Login", "Account") %></li>-->
+                            <li><%: Html.ActionLink("Setup", "Setup", "Account") %></li>
                             <li><%: Html.ActionLink("About", "About", "Home") %></li>
-                            <li><%: Html.ActionLink("Contact", "Contact", "Home") %></li>
                         </ul>
                     </nav>
                 </div>
@@ -32,13 +35,14 @@
         <div id="body">
             <asp:ContentPlaceHolder ID="FeaturedContent" runat="server" />
             <section class="content-wrapper main-content clear-fix">
+                <br />
                 <asp:ContentPlaceHolder ID="MainContent" runat="server" />
             </section>
         </div>
         <footer>
             <div class="content-wrapper">
                 <div class="float-left">
-                    <p>&copy; <%: DateTime.Now.Year %> - My ASP.NET MVC Application</p>
+                    <p>&copy; Copyright <%: DateTime.Now.Year %> - Patrick Klein</p>
                 </div>
             </div>
         </footer>
