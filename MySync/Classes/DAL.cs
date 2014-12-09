@@ -14,7 +14,23 @@ namespace My_Sync.Classes
 {
     static class DAL
     {
-        private static MySyncEntities dbInstance = new MySyncEntities();
+        private static MySyncEntities dbInstance;
+
+        /// <summary>
+        /// Singleton Methof of getting a MySyncEntities database instance
+        /// </summary>
+        /// <returns>current instance of MySyncEntities database</returns>
+        private static MySyncEntities GetDBInstance()
+        {
+            if (dbInstance != null) return dbInstance;
+
+            using (new Logger())
+            {
+                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                dbInstance = mainWindow.dbInstance;
+                return dbInstance;
+            }
+        }
 
         /// <summary>
         /// Method for creating the SQLite database if it not exists (extract from embedded resources)
@@ -72,11 +88,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(newToSync))
             {
-                //only adds the new item, if is not in the database already
-                if(!dbInstance.ToSync.ToList().Exists(x => x.synchronizationItemId == newToSync.synchronizationItemId))
-                    dbInstance.ToSync.Add(newToSync);
-                
-                dbInstance.SaveChanges();
+                newToSync.id = GetNextToSyncId();
+                GetDBInstance().ToSync.Add(newToSync);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -84,13 +98,13 @@ namespace My_Sync.Classes
         /// Gets the next available id in the database for adding a new item
         /// </summary>
         /// <returns>next valid id value</returns>
-        public static long GetNextToSyncId()
+        private static long GetNextToSyncId()
         {
             using (new Logger())
             {
-                int count = dbInstance.ToSync.ToList().Count;
+                int count = GetDBInstance().ToSync.ToList().Count;
                 if (count == 0) return count;
-                return dbInstance.ToSync.OrderBy(x => x.id).ToList().Last().id + 1;
+                return GetDBInstance().ToSync.OrderBy(x => x.id).ToList().Last().id + 1;
             }
         }
 
@@ -102,9 +116,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(synchronizationItemId))
             {
-                ToSync toDelete = dbInstance.ToSync.Single(x => x.synchronizationItemId.Equals(synchronizationItemId));
-                dbInstance.ToSync.Remove(toDelete);
-                dbInstance.SaveChanges();
+                ToSync toDelete = GetDBInstance().ToSync.Single(x => x.synchronizationItemId.Equals(synchronizationItemId));
+                GetDBInstance().ToSync.Remove(toDelete);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -120,8 +134,37 @@ namespace My_Sync.Classes
         {
             using (new Logger(newHistory))
             {
-                dbInstance.History.Add(newHistory);
-                dbInstance.SaveChanges();
+                newHistory.id = DAL.GetNextHistoryId();
+                GetDBInstance().History.Add(newHistory);
+                GetDBInstance().SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Adds a new history entry to the database
+        /// </summary>
+        /// <param name="newHistory">new entry to store in the database</param>
+        public static void AddItemToHistory(string name, string historyFlag, bool folderFlag, string serverDescription)
+        {
+            using (new Logger(name, historyFlag, folderFlag, serverDescription))
+            {
+                History newEntry = new History();
+
+                string historyEvent = "";
+                switch(historyFlag) {
+                    case "u": historyEvent = "updated on"; break;
+                    case "n": historyEvent = "sent to"; break;
+                    case "d": historyEvent = "deleted from"; break;
+                }
+
+                newEntry.timestamp = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"); 
+                newEntry.entry = String.Format("{0} '{1}' {2} server '{3}'.", 
+                                               (folderFlag) ? "Folder" : "File", 
+                                               name, 
+                                               historyEvent,
+                                               serverDescription);
+                
+                AddHistory(newEntry);
             }
         }
 
@@ -136,7 +179,7 @@ namespace My_Sync.Classes
             {
                 string history = "";
 
-                List<History> entries = dbInstance.History.OrderByDescending(x => x.timestamp).Take(showItems).ToList();
+                List<History> entries = GetDBInstance().History.OrderByDescending(x => x.timestamp).Take(showItems).ToList();
                 foreach (History entry in entries)
                     history += String.Format("[{0:dd/MM/yyyy HH:mm}]: {1}\r", DateTime.ParseExact(entry.timestamp, "yyyy/MM/dd HH:mm:ss", null), entry.entry);
 
@@ -148,13 +191,13 @@ namespace My_Sync.Classes
         /// Gets the next available id in the database for adding a new item
         /// </summary>
         /// <returns>next valid id value</returns>
-        public static long GetNextHistoryId()
+        private static long GetNextHistoryId()
         {
             using (new Logger())
             {
-                int count = dbInstance.History.ToList().Count;
+                int count = GetDBInstance().History.ToList().Count;
                 if (count == 0) return count;
-                return dbInstance.History.OrderBy(x => x.id).ToList().Last().id + 1;
+                return GetDBInstance().History.OrderBy(x => x.id).ToList().Last().id + 1;
             }
         }
 
@@ -166,9 +209,9 @@ namespace My_Sync.Classes
         {
             using(new Logger(entry)) 
             {
-                History historyToDelete = dbInstance.History.Single(x => x.entry.Equals(entry));
-                dbInstance.History.Remove(historyToDelete);
-                dbInstance.SaveChanges();
+                History historyToDelete = GetDBInstance().History.Single(x => x.entry.Equals(entry));
+                GetDBInstance().History.Remove(historyToDelete);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -184,8 +227,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(newFilter))
             {
-                dbInstance.FileFilter.Add(newFilter);
-                dbInstance.SaveChanges();
+                newFilter.id = GetNextFileFilterId();
+                GetDBInstance().FileFilter.Add(newFilter);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -197,7 +241,21 @@ namespace My_Sync.Classes
         {
             using (new Logger())
             {
-                return dbInstance.FileFilter.ToList();
+                return GetDBInstance().FileFilter.ToList();
+            }
+        }
+
+        /// <summary>
+        /// Gets all existing file filter terms from the database
+        /// </summary>
+        /// <returns>list of file filter terms</returns>
+        public static List<string> GetFileFilterTerms()
+        {
+            using (new Logger())
+            {
+                List<string> terms = new List<string>();
+                GetDBInstance().FileFilter.ToList().ForEach(x => terms.Add(x.term));
+                return terms;
             }
         }
 
@@ -205,13 +263,13 @@ namespace My_Sync.Classes
         /// Gets the next available id in the database for adding a new item
         /// </summary>
         /// <returns>next valid id value</returns>
-        public static long GetNextFileFilterId()
+        private static long GetNextFileFilterId()
         {
             using (new Logger())
             {
-                int count = dbInstance.FileFilter.ToList().Count;
+                int count = GetDBInstance().FileFilter.ToList().Count;
                 if (count == 0) return count;
-                return dbInstance.FileFilter.OrderBy(x => x.id).ToList().Last().id + 1;
+                return GetDBInstance().FileFilter.OrderBy(x => x.id).ToList().Last().id + 1;
             }
         }
 
@@ -223,9 +281,9 @@ namespace My_Sync.Classes
         {
             using(new Logger(filter)) 
             {
-                FileFilter filterToDelete = dbInstance.FileFilter.Single(x => x.term.Equals(filter));
-                dbInstance.FileFilter.Remove(filterToDelete);
-                dbInstance.SaveChanges();
+                FileFilter filterToDelete = GetDBInstance().FileFilter.Single(x => x.term.Equals(filter));
+                GetDBInstance().FileFilter.Remove(filterToDelete);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -248,8 +306,8 @@ namespace My_Sync.Classes
                 newPoint.serverurl = newEntryPoint.Server;
                 newPoint.id = DAL.GetNextServerEntryPointId();
 
-                dbInstance.ServerEntryPoint.Add(newPoint);
-                dbInstance.SaveChanges();
+                GetDBInstance().ServerEntryPoint.Add(newPoint);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -263,7 +321,7 @@ namespace My_Sync.Classes
             {
                 List<SynchronizationPoint> entryPointList = new List<SynchronizationPoint>();
 
-                foreach (ServerEntryPoint point in dbInstance.ServerEntryPoint)
+                foreach (ServerEntryPoint point in GetDBInstance().ServerEntryPoint)
                 {
                     SynchronizationPoint newPoint = new SynchronizationPoint();
                     newPoint.ServerType = Helper.GetImageOfAssembly(point.icon);
@@ -282,13 +340,13 @@ namespace My_Sync.Classes
         /// Gets the next available id in the database for adding a new item
         /// </summary>
         /// <returns>next valid id value</returns>
-        public static long GetNextServerEntryPointId()
+        private static long GetNextServerEntryPointId()
         {
             using (new Logger())
             {
-                int count = dbInstance.ServerEntryPoint.ToList().Count;
+                int count = GetDBInstance().ServerEntryPoint.ToList().Count;
                 if (count == 0) return count;
-                return dbInstance.ServerEntryPoint.OrderBy(x => x.id).ToList().Last().id + 1;
+                return GetDBInstance().ServerEntryPoint.OrderBy(x => x.id).ToList().Last().id + 1;
             }
         }
 
@@ -301,7 +359,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(description))
             {
-                return dbInstance.ServerEntryPoint.Single(x => x.description.Equals(description));
+                return GetDBInstance().ServerEntryPoint.Single(x => x.description.Equals(description));
             }
         }
 
@@ -314,7 +372,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(path))
             {
-                return dbInstance.ServerEntryPoint.Single(x => x.folderpath.Equals(path));
+                return GetDBInstance().ServerEntryPoint.Single(x => x.folderpath.Equals(path));
             }
         }
 
@@ -326,9 +384,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(description))
             {
-                ServerEntryPoint entryPointToDelete = dbInstance.ServerEntryPoint.Single(x => x.description.Equals(description));
-                dbInstance.ServerEntryPoint.Remove(entryPointToDelete);
-                dbInstance.SaveChanges();
+                ServerEntryPoint entryPointToDelete = GetDBInstance().ServerEntryPoint.Single(x => x.description.Equals(description));
+                GetDBInstance().ServerEntryPoint.Remove(entryPointToDelete);
+                GetDBInstance().SaveChanges();
 
                 //delete related files and folders from the synchronization item table
                 DeleteSynchronizationItem(entryPointToDelete.id);
@@ -348,8 +406,8 @@ namespace My_Sync.Classes
             using (new Logger(newItem))
             {
                 newItem.id = DAL.GetNextSynchronizationItemId();
-                dbInstance.SynchronizationItem.Add(newItem);
-                dbInstance.SaveChanges();
+                GetDBInstance().SynchronizationItem.Add(newItem);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -361,9 +419,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(changedItem))
             {
-                SynchronizationItem item = dbInstance.SynchronizationItem.ToList().Single(x => x.id == changedItem.id);
+                SynchronizationItem item = GetDBInstance().SynchronizationItem.ToList().Single(x => x.id == changedItem.id);
                 item = changedItem;
-                dbInstance.SaveChanges();
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -377,7 +435,8 @@ namespace My_Sync.Classes
         {
             using (new Logger(fullname, path))
             {
-                return dbInstance.SynchronizationItem.ToList().Single(x => x.fullname.Equals(fullname) && x.path.Equals(path));
+                var temp = GetDBInstance().SynchronizationItem;
+                return temp.SingleOrDefault(x => x.fullname.Equals(fullname) && x.path.Equals(path));
             }
         }
 
@@ -390,7 +449,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(path))
             {
-                return dbInstance.SynchronizationItem.ToList().Where(x => x.path.StartsWith(path)).ToList();
+                return GetDBInstance().SynchronizationItem.ToList().Where(x => x.path.StartsWith(path)).ToList();
             }
         }
 
@@ -402,7 +461,7 @@ namespace My_Sync.Classes
         {
             using (new Logger())
             {
-                return dbInstance.SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.folderFlag) == false).ToList();
+                return GetDBInstance().SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.folderFlag) == false).ToList();
             }
         }
 
@@ -414,7 +473,7 @@ namespace My_Sync.Classes
         {
             using (new Logger())
             {
-                return dbInstance.SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.folderFlag) == true).ToList();
+                return GetDBInstance().SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.folderFlag) == true).ToList();
             }
         }
 
@@ -422,14 +481,14 @@ namespace My_Sync.Classes
         /// Gets the next available id in the database for adding a new item
         /// </summary>
         /// <returns>next valid id value</returns>
-        public static long GetNextSynchronizationItemId()
+        private static long GetNextSynchronizationItemId()
         {
             using (new Logger())
             {
-                int count = dbInstance.SynchronizationItem.ToList().Count;
+                int count = GetDBInstance().SynchronizationItem.Count();
                 if (count == 0) return count;
 
-                return dbInstance.SynchronizationItem.OrderBy(x => x.id).ToList().Last().id + 1;
+                return GetDBInstance().SynchronizationItem.OrderBy(x => x.id).ToList().Last().id + 1;
             }
         }
 
@@ -441,9 +500,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(fullFileName))
             {
-                SynchronizationItem itemToDelete = dbInstance.SynchronizationItem.Single(x => x.name.Equals(fullFileName));
-                dbInstance.SynchronizationItem.Remove(itemToDelete);
-                dbInstance.SaveChanges();
+                SynchronizationItem itemToDelete = GetDBInstance().SynchronizationItem.Single(x => x.name.Equals(fullFileName));
+                GetDBInstance().SynchronizationItem.Remove(itemToDelete);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -455,9 +514,9 @@ namespace My_Sync.Classes
         {
             using (new Logger(item))
             {
-                SynchronizationItem itemToDelete = dbInstance.SynchronizationItem.Single(x => x.id == item.id);
-                dbInstance.SynchronizationItem.Remove(itemToDelete);
-                dbInstance.SaveChanges();
+                SynchronizationItem itemToDelete = GetDBInstance().SynchronizationItem.Single(x => x.id == item.id);
+                GetDBInstance().SynchronizationItem.Remove(itemToDelete);
+                GetDBInstance().SaveChanges();
             }
         }
 
@@ -469,11 +528,11 @@ namespace My_Sync.Classes
         {
             using (new Logger(serverEntryPointId))
             {
-                List<SynchronizationItem> items = dbInstance.SynchronizationItem.ToList().Where(x => x.serverEntryPointId == serverEntryPointId).ToList();
+                List<SynchronizationItem> items = GetDBInstance().SynchronizationItem.ToList().Where(x => x.serverEntryPointId == serverEntryPointId).ToList();
                 foreach(SynchronizationItem itemToDelete in items)
-                    dbInstance.SynchronizationItem.Remove(itemToDelete);
+                    GetDBInstance().SynchronizationItem.Remove(itemToDelete);
 
-                dbInstance.SaveChanges();
+                GetDBInstance().SaveChanges();
             }
         }
 

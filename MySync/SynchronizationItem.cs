@@ -17,8 +17,8 @@ namespace My_Sync
         public long id { get; set; }
         public Nullable<decimal> serverEntryPointId { get; set; }
         public string name { get; set; }
-        public string extension { get; set; }
         public string fullname { get; set; }
+        public string extension { get; set; }
         public string creationTime { get; set; }
         public string lastAccessTime { get; set; }
         public string lastWriteTime { get; set; }

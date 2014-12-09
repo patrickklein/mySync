@@ -30,9 +30,8 @@ namespace My_Sync
     public partial class MainWindow : Window
     {
         public string applicationName = "MySync";
+        public MySyncEntities dbInstance = new MySyncEntities();
         private NotifyIcon notifyIcon = new NotifyIcon();
-        private List<string> fileFilter = new List<string>();
-        private MySyncEntities dbInstance = new MySyncEntities();
 
         public MainWindow()
         {
@@ -77,17 +76,14 @@ namespace My_Sync
                 GeneralCBXFastSync.IsChecked = MySync.Default.fastSync;
 
                 //Notification Icon
-                if (!reinitialization)
-                {
-                    notifyIcon.InitializeNotifyIcon();
-                    notifyIcon.ShowWindow(false);
-                }
+                notifyIcon.InitializeNotifyIcon();
+                if (!reinitialization) notifyIcon.ShowWindow(false);
 
                 //Fill GUI for Server Entry Point, File Filter, History
                 ServerDGSynchronizationPoints.Columns.Clear();
                 ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
                 FilterLVFilter.Columns.Clear();
-                FilterLVFilter.ItemsSource = DAL.GetFileFilters().Select(x => new { Value = x.term }).ToList();
+                FilterLVFilter.ItemsSource = DAL.GetFileFilters();
                 HistoryRTBHistory.Document.Blocks.Clear();
                 HistoryRTBHistory.AppendText(DAL.GetHistory());      
          
@@ -149,7 +145,7 @@ namespace My_Sync
                 {
                     case "de-AT": dict.Source = new Uri(@"..\Resources\Language\German.xaml",  UriKind.Relative); break;
                     case "en-US": dict.Source = new Uri(@"..\Resources\Language\English.xaml", UriKind.Relative); break;
-                    default: dict.Source = new Uri(@"..\Resources\Language\English.xaml", UriKind.Relative); break;
+                    default:      dict.Source = new Uri(@"..\Resources\Language\English.xaml", UriKind.Relative); break;
                 }
 
                 this.Resources.MergedDictionaries.Clear();
@@ -161,25 +157,6 @@ namespace My_Sync
 
         #region General Tab
 
-        public void test()
-        {
-            using (var client = new HttpClient())
-            {
-                using (var content = new MultipartFormDataContent())
-                {
-                    var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(@"C:\Users\Patrick\Desktop\Hive Operators and Functions.mp4"));
-                    fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                    {
-                        FileName = "Hive Operators and Functions.mp4",
-                        Name = "UploadedFile"
-                    };
-                    content.Add(fileContent);
-
-                    var requestUri = "http://localhost:51992/Account/Upload";
-                    var result = client.PostAsync(requestUri, content).Result;
-                }
-            }
-        }
         /// <summary>
         /// Changes the app language to the selected one and saves the chosen value in the settings file
         /// </summary>
@@ -240,7 +217,7 @@ namespace My_Sync
                 }
                 else
                 {
-                    test();
+                    Synchronization.SendFileToServer(new FileInfo(@"C:\Users\Patrick\Desktop\Hive Operators and Functions.mp4"), "http://localhost:51992/Account/Upload");
                     GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
                     GeneralCBInterval.IsEnabled = true;
                 }
@@ -338,6 +315,20 @@ namespace My_Sync
         }
 
         /// <summary>
+        /// Generates the datagrid columns and adds the chosen servertype images
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private void FilterLVFilter_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                if (e.PropertyName != "id") return;
+                e.Cancel = true;
+            }
+        }
+
+        /// <summary>
         /// Adds a new definition of a filter to the filterlist
         /// </summary>
         /// <param name="sender">event sender</param>
@@ -346,10 +337,13 @@ namespace My_Sync
         {
             using (new Logger(sender, e))
             {
-                if (FilterTBTerm.Text.Trim() != "" && !fileFilter.Contains(FilterTBTerm.Text.Trim()))
+                if (FilterTBTerm.Text.Trim() != "" && !DAL.GetFileFilterTerms().Contains(FilterTBTerm.Text.Trim()))
                 {
-                    fileFilter.Add(FilterTBTerm.Text.Trim());
-                    FilterLVFilter.ItemsSource = fileFilter.Select(x => new { Value = x }).ToList();
+                    FileFilter newFilter = new FileFilter();
+                    newFilter.term = FilterTBTerm.Text.Trim();
+                    DAL.AddFileFilter(newFilter);
+
+                    FilterLVFilter.ItemsSource = DAL.GetFileFilters();
                     FilterLVFilter.Items.Refresh();
                     FilterTBTerm.Text = "";
                 }
@@ -366,8 +360,12 @@ namespace My_Sync
             using (new Logger(sender, e))
             {
                 int index = FilterLVFilter.SelectedIndex;
-                if (index >= 0) fileFilter.RemoveAt(index);
-                FilterLVFilter.ItemsSource = fileFilter.Select(x => new { Value = x }).ToList();
+                if (index == -1) return;
+
+                FileFilter selectedFileFilter = FilterLVFilter.Items[index] as FileFilter;
+                DAL.DeleteFileFilter(selectedFileFilter.term);
+
+                FilterLVFilter.ItemsSource = DAL.GetFileFilters();
                 FilterLVFilter.Items.Refresh();
             }
         }
@@ -485,7 +483,7 @@ namespace My_Sync
                 AddToFavorites_Check(sender, e);
 
                 //Adds all files and directories to the database
-                Synchronization.AddAllFromFolder(point);
+                Synchronization.DBAddAllFromFolder(point);
                 Synchronization.RefreshWatcher();
             }
         }

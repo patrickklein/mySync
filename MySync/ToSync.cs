@@ -16,5 +16,6 @@ namespace My_Sync
     {
         public long id { get; set; }
         public Nullable<decimal> synchronizationItemId { get; set; }
+        public string syncType { get; set; }
     }
 }

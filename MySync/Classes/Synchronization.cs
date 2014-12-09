@@ -2,64 +2,52 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace My_Sync.Classes
 {
     static class Synchronization
     {
-        private static MySyncEntities dbInstance = new MySyncEntities();
         private static List<FileSystemWatcher> watcherList = new List<FileSystemWatcher>();
+        private static System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        private static List<Tuple<char, SynchronizationItem>> syncItemList = new List<Tuple<char, SynchronizationItem>>();
 
         /// <summary>
-        /// Adds all files and folders from a given path to the database (SynchronizationItem Table)
+        /// Sends the given file/folder to the server address, provided from the related server entry point
         /// </summary>
-        /// <param name="path">root path for lookup</param>
-        public static void AddAllFromFolder(SynchronizationPoint entryPoint)
+        /// <param name="file2Sync">file/folder which should be send to the server</param>
+        /// <param name="requestUri">server address from the related server entry point</param>
+        public static void SendFileToServer(FileInfo file2Sync, string requestUri)
         {
-            using (new Logger(entryPoint))
+            using (new Logger(file2Sync, requestUri))
             {
-                ItemInfo info = new ItemInfo();
-                DirectoryInfo dirInfo = (DirectoryInfo)info.GetInfo(entryPoint.Folder);
-
-                //All files
-                FileInfo[] fileInfo = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
-                foreach (FileInfo file in fileInfo)
+                using (var client = new HttpClient())
                 {
-                    ItemInfo tempInfo = new ItemInfo();
-                    tempInfo.GetInfo(file.FullName);
-                    AddToDatabase(tempInfo, entryPoint.Description);
+                    using (var content = new MultipartFormDataContent())
+                    {
+                        var fileContent = new ByteArrayContent(File.ReadAllBytes(file2Sync.FullName));
+                        fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                        {
+                            FileName = file2Sync.Name,
+                            Name = "uploadedFile"
+                        };
+                        content.Add(fileContent);
+                        content.Add(new StringContent(file2Sync.CreationTime.ToString()), "creationTime");
+                        content.Add(new StringContent(file2Sync.LastWriteTime.ToString()), "lastWriteTime");
+                        content.Add(new StringContent(file2Sync.LastAccessTime.ToString()), "lastAccessTime");
+                        content.Add(new StringContent(file2Sync.Length.ToString()), "length");
+                        content.Add(new StringContent(file2Sync.Directory.ToString()), "directory");
+
+                        var result = client.PostAsync(requestUri, content).Result;
+                    }
                 }
-
-                //All directories
-                DirectoryInfo[] directoryInfo = dirInfo.GetDirectories("*", SearchOption.AllDirectories);
-                foreach (DirectoryInfo directory in directoryInfo)
-                {
-                    ItemInfo tempInfo = new ItemInfo();
-                    tempInfo.GetInfo(directory.FullName);
-                    AddToDatabase(tempInfo, entryPoint.Description);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Method for adding a new synchronization point into the database
-        /// </summary>
-        /// <param name="item">iteminfo object with the containing values</param>
-        /// <param name="serverDescription">needed for gathering the server entry point id</param>
-        private static void AddToDatabase(ItemInfo item, string serverDescription)
-        {
-            using (new Logger(item, serverDescription))
-            {
-                SynchronizationItem newItem = ItemInfoToSyncItem(item, new SynchronizationItem());
-
-                ServerEntryPoint point = DAL.GetServerEntryPoint(serverDescription);
-                newItem.serverEntryPointId = point.id;
-
-                DAL.AddSynchronizationItem(newItem);
             }
         }
 
@@ -92,12 +80,128 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
+        /// Refreshes the history entries on the GUI
+        /// </summary>
+        private static void RefreshHistoryEntries()
+        {
+            using (new Logger())
+            {
+                Application.Current.Dispatcher.Invoke(DispatcherPriority.Normal, (ThreadStart)delegate
+                {
+                    MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                    mainWindow.HistoryRTBHistory.Document.Blocks.Clear();
+                    mainWindow.HistoryRTBHistory.AppendText(DAL.GetHistory());
+                });
+            }
+        }
+
+        #region Timer
+
+        /// <summary>
+        /// MEthod for starting a countdown to synchronize new/deleted or changed files and folders
+        /// </summary>
+        private static void StartTimer()
+        {
+            using (new Logger())
+            {
+                MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                string selectedTime = ((ContentControl)(mainWindow.GeneralCBInterval.SelectedItem)).Uid.ToString();
+                timer.Interval = Convert.ToInt32(selectedTime) * 1000;
+                timer.Tick += new EventHandler(Timer_Tick);
+                timer.Start();
+            }
+        }
+
+        /// <summary>
+        /// Timer Tick event method - counts down the given interval and starts synchronization
+        /// </summary>
+        /// <param name="sender">event sender</param>
+        /// <param name="e">event arguments</param>
+        private static void Timer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                //if (lastChecked.AddMinutes(Convert.ToInt32(cbIntervall.Text) * 60 + 5) < DateTime.Now) startThread = false;
+
+                //CheckConnection();
+            }
+            catch (ThreadAbortException)
+            {
+                Thread.ResetAbort();
+            }
+        }
+
+        #endregion
+
+        #region Database Functions
+
+        /// <summary>
+        /// Adds all files and folders from a given path to the database (SynchronizationItem Table)
+        /// </summary>
+        /// <param name="path">root path for lookup</param>
+        public static void DBAddAllFromFolder(SynchronizationPoint entryPoint)
+        {
+            using (new Logger(entryPoint))
+            {
+                ItemInfo info = new ItemInfo();
+                DirectoryInfo dirInfo = (DirectoryInfo)info.GetInfo(entryPoint.Folder);
+
+                //All files
+                FileInfo[] fileInfo = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
+                foreach (FileInfo file in fileInfo)
+                {
+                    ItemInfo tempInfo = new ItemInfo();
+                    tempInfo.GetInfo(file.FullName);
+                    AddToDatabase(tempInfo, entryPoint.Description);
+                }
+
+                //All directories
+                DirectoryInfo[] directoryInfo = dirInfo.GetDirectories("*", SearchOption.AllDirectories);
+                foreach (DirectoryInfo directory in directoryInfo)
+                {
+                    ItemInfo tempInfo = new ItemInfo();
+                    tempInfo.GetInfo(directory.FullName);
+                    AddToDatabase(tempInfo, entryPoint.Description);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Method for adding a new synchronization point into the database
+        /// </summary>
+        /// <param name="item">iteminfo object with the containing values</param>
+        /// <param name="serverDescription">needed for gathering the server entry point id</param>
+        /// <returns>item which was added to the database</returns>
+        private static SynchronizationItem AddToDatabase(ItemInfo item, string serverDescription)
+        {
+            using (new Logger(item, serverDescription))
+            {
+                SynchronizationItem newItem = ItemInfoToSyncItem(item, new SynchronizationItem());
+
+                ServerEntryPoint point = DAL.GetServerEntryPoint(serverDescription);
+                newItem.serverEntryPointId = point.id;
+                
+                ToSync sync = new ToSync();
+                sync.syncType = "n";
+                sync.synchronizationItemId = newItem.id;
+
+                //make changes in the database
+                DAL.AddSynchronizationItem(newItem);
+                DAL.AddToSync(sync);
+                DAL.AddItemToHistory(item.Filename, sync.syncType, item.FolderFlag, serverDescription);
+
+                return newItem;
+            }
+        }
+
+        /// <summary>
         /// Updates a synchronisation item in the database
         /// </summary>
+        /// <param name="path">full path of file/folder</param>
         /// <param name="oldName">old name of file/folder</param>
         /// <param name="newName">new name of file/folder (if empty it gets the value from oldName)</param>
-        /// <param name="path">full path of file/folder</param>
-        public static void UpdateSynchronizationItem(string path, string oldName, string newName = "")
+        /// <returns>item which was updated in the database</returns>
+        private static SynchronizationItem DBUpdateSynchronizationItem(string path, string oldName, string newName = "")
         {
             using (new Logger(path, oldName, newName))
             {
@@ -110,7 +214,17 @@ namespace My_Sync.Classes
                 ItemInfo item = new ItemInfo();
                 item.GetInfo(path);
                 toRename = ItemInfoToSyncItem(item, toRename);
+
+                ToSync sync = new ToSync();
+                sync.syncType = "u";
+                sync.synchronizationItemId = toRename.id;
+
+                //make changes in the database
                 DAL.UpdateSynchronizationItem(toRename);
+                DAL.AddToSync(sync);
+                DAL.AddItemToHistory(item.Filename, sync.syncType, item.FolderFlag, "");
+                
+                return toRename;
             }
         }
 
@@ -119,24 +233,39 @@ namespace My_Sync.Classes
         /// </summary>
         /// <param name="name">filename or foldername</param>
         /// <param name="path">full path</param>
-        public static void DeleteSynchronizationItem(string name, string path)
+        /// <returns>item which was deleted from the database</returns>
+        private static SynchronizationItem DBDeleteSynchronizationItem(string name, string path)
         {
             using (new Logger(name, path))
             {
                 SynchronizationItem toDelete = DAL.GetSynchronizationItem(name, path);
 
                 //if it was a folder, delete all contained files/folder 
-                if (Convert.ToBoolean(toDelete.folderFlag))
+                if (toDelete != null)
                 {
-                    string fullPath = Path.Combine(toDelete.path, toDelete.fullname);
-                    List<SynchronizationItem> items = DAL.GetSynchronizationItems(fullPath);
-                    foreach(SynchronizationItem item in items)
-                        DAL.DeleteSynchronizationItem(item);
+                    if (Convert.ToBoolean(toDelete.folderFlag))
+                    {
+                        string fullPath = Path.Combine(toDelete.path, toDelete.fullname);
+                        List<SynchronizationItem> items = DAL.GetSynchronizationItems(fullPath);
+                        foreach (SynchronizationItem item in items)
+                            DAL.DeleteSynchronizationItem(item);
+                    }
+
+                    ToSync sync = new ToSync();
+                    sync.syncType = "d";
+                    sync.synchronizationItemId = toDelete.id;
+
+                    //make changes in the database
+                    DAL.DeleteSynchronizationItem(toDelete);
+                    DAL.AddToSync(sync);
+                    DAL.AddItemToHistory(toDelete.name, sync.syncType, Convert.ToBoolean(toDelete.folderFlag), "");
                 }
 
-                DAL.DeleteSynchronizationItem(toDelete);
+                return toDelete;
             }
         }
+
+        #endregion
 
         #region File Watcher
 
@@ -196,7 +325,8 @@ namespace My_Sync.Classes
             {
                 //Delay is given to the thread for avoiding same process to be repeated
                 Thread.Sleep(100);
-                UpdateSynchronizationItem(e.FullPath, e.OldName, e.Name);
+                DBUpdateSynchronizationItem(e.FullPath, e.OldName, e.Name);
+                RefreshHistoryEntries();
             }
         }
 
@@ -214,7 +344,8 @@ namespace My_Sync.Classes
 
                 string name = e.FullPath.Split('\\').Last();
                 string path = e.FullPath.Replace(name, "").TrimEnd('\\');
-                DeleteSynchronizationItem(name, path);
+                DBDeleteSynchronizationItem(name, path);
+                RefreshHistoryEntries();
             }
         }
 
@@ -229,7 +360,8 @@ namespace My_Sync.Classes
             {
                 //Delay is given to the thread for avoiding same process to be repeated
                 Thread.Sleep(100);
-                UpdateSynchronizationItem(e.FullPath, e.Name);
+                DBUpdateSynchronizationItem(e.FullPath, e.Name);
+                RefreshHistoryEntries();
             }
         }
 
@@ -249,6 +381,7 @@ namespace My_Sync.Classes
 
                 string description = DAL.GetServerEntryPointByPath(((FileSystemWatcher)objectCreated).Path).description;
                 AddToDatabase(newItem, description);
+                RefreshHistoryEntries();
             }
         }
 

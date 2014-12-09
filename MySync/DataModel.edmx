@@ -62,6 +62,7 @@
           <Key>
             <PropertyRef Name="id" />
           </Key>
+          <Property Name="syncType" Type="nvarchar" />
           <Property Name="id" Type="integer" Nullable="false" />
           <Property Name="synchronizationItemId" Type="decimal" Precision="53" />
         </EntityType>
@@ -109,8 +110,8 @@
           <Property Name="id" Type="Int64" Nullable="false" />
           <Property Name="serverEntryPointId" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="name" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
-          <Property Name="extension" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="fullname" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="extension" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="creationTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="lastAccessTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="lastWriteTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
@@ -129,6 +130,7 @@
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
           <Property Name="synchronizationItemId" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="syncType" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
       </Schema>
     </edmx:ConceptualModels>
@@ -189,6 +191,7 @@
           <EntitySetMapping Name="ToSync">
             <EntityTypeMapping TypeName="MySyncModel.ToSync">
               <MappingFragment StoreEntitySet="ToSync">
+                <ScalarProperty Name="syncType" ColumnName="syncType" />
                 <ScalarProperty Name="id" ColumnName="id" />
                 <ScalarProperty Name="synchronizationItemId" ColumnName="synchronizationItemId" />
               </MappingFragment>
