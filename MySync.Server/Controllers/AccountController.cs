@@ -82,7 +82,6 @@ namespace MySync.Server.Controllers
                 HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
                 string className = "DPFileSystem";
-                className = "DPFabasoftFolio";
                 DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
                 newContent.SetSection(Server, Request, section);
                 newContent.SaveFile();
