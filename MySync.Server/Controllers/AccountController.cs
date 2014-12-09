@@ -13,6 +13,9 @@ using MySync.Server.Models;
 using System.IO;
 using System.Web.Configuration;
 using System.Configuration;
+using MySync.Server.DataProfile;
+using System.Collections.Specialized;
+using System.Reflection;
 
 namespace MySync.Server.Controllers
 {
@@ -26,8 +29,15 @@ namespace MySync.Server.Controllers
         [AllowAnonymous]
         public ActionResult Setup(string returnUrl)
         {
+            // existing DataProfile Classes from web.config file
+            NameValueCollection appSettings = ConfigurationManager.AppSettings;
+            Dictionary<string, string> dpClasses = new Dictionary<string, string>();
+            List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
+            foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
+            ViewBag.DPClasses = dpClasses;
+
             HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            ViewBag.MaxFileSize = section.MaxRequestLength / 1024;
+            ViewBag.MaxFileSize = section.MaxRequestLength / 1024 / 1000;
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
@@ -41,9 +51,16 @@ namespace MySync.Server.Controllers
         {
             // If we got this far, something failed, redisplay form
             HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            int maxFilesize = section.MaxRequestLength / 1024;
+            int maxFilesize = section.MaxRequestLength / 1024 /1000;
             ViewBag.MaxFileSize = maxFilesize;
             ViewBag.DiskSpace = "123 Mb";
+
+            // existing DataProfile Classes from web.config file
+            NameValueCollection appSettings = ConfigurationManager.AppSettings;
+            Dictionary<string, string> dpClasses = new Dictionary<string, string>();
+            List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
+            foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
+            ViewBag.DPClasses = dpClasses;
 
             //check all given values from the view
             if (model.FileSize < 0 || model.FileSize > maxFilesize)
@@ -61,20 +78,14 @@ namespace MySync.Server.Controllers
         public ActionResult Upload(FormCollection formCollection)
         {
             if (Request != null)
-            {
+            {                
                 HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-                int maxRequestLength = section.MaxRequestLength;
-       
-                HttpPostedFileBase file = Request.Files["UploadedFile"];
 
-                if ((file != null) && (file.ContentLength > 0) && (file.ContentLength < maxRequestLength) && !string.IsNullOrEmpty(file.FileName))
-                {
-                    string fileName = file.FileName;
-                    string fileContentType = file.ContentType;
-                    byte[] fileBytes = new byte[file.ContentLength];
-                    var path = Path.Combine(Server.MapPath("~/App_Data"), fileName);
-                    file.SaveAs(path);
-                }
+                string className = "DPFileSystem";
+                className = "DPFabasoftFolio";
+                DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
+                newContent.SetSection(Server, Request, section);
+                newContent.SaveFile();
             }
 
             return RedirectToAction("Setup", "Account");

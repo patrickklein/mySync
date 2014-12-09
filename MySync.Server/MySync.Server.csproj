@@ -165,6 +165,11 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="DataProfile\DataProfile.cs" />
+    <Compile Include="DataProfile\DPFabasoftFolio.cs" />
+    <Compile Include="DataProfile\DPFileSystem.cs" />
+    <Compile Include="DataProfile\DPMicrosoftSharepoint.cs" />
+    <Compile Include="DataProfile\IDataProfile.cs" />
     <Compile Include="Filters\InitializeSimpleMembershipAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>

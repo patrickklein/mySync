@@ -20,7 +20,7 @@ namespace MySync.Server.Models
             if(ErrorMessage == null && ErrorMessageResourceName == null)
             {
                 HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-                ErrorMessage = String.Format("Please enter a valid number between {0} and {1}.", 0, section.MaxRequestLength / 1024);
+                ErrorMessage = String.Format("Please enter a valid number between {0} and {1}.", 0, section.MaxRequestLength / 1024 / 1000);
             }
 
  	        return base.FormatErrorMessage(name);
@@ -37,7 +37,7 @@ namespace MySync.Server.Models
 
             //check if value is lower than maximum allowed
             HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            int maxFilesize = section.MaxRequestLength / 1024;
+            int maxFilesize = section.MaxRequestLength / 1024 / 1000;
             if ((retNum < 0 || retNum > maxFilesize) || !parse) return false;
 
             return true;
@@ -60,6 +60,27 @@ namespace MySync.Server.Models
         [DatabaseGeneratedAttribute(DatabaseGeneratedOption.Identity)]
         public int UserId { get; set; }
         public string UserName { get; set; }
+    }
+
+    public class SetupModel
+    {
+        [Required]
+        [Display(Name = "Path for data saving")]
+        public string Path { get; set; }
+
+        [Required]
+        [Display(Name = "Maximum allowed file size")]
+        [FileSize]
+        public int FileSize { get; set; }
+
+        [Required]
+        [Display(Name = "Maximum available disk space for synchronization")]
+        [FileSize]
+        public int DiskSpace { get; set; }
+
+        [Required]
+        [Display(Name = "Type of data saving")]
+        public string DataProfile { get; set; }
     }
 
     public class LocalPasswordModel
@@ -91,33 +112,5 @@ namespace MySync.Server.Models
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; }
-    }
-
-    public class SetupModel
-    {
-        [Required]
-        [Display(Name = "Path for data saving")]
-        public string Path { get; set; }
-
-        [Required]
-        [Display(Name = "Maximum allowed file size")]
-        [FileSize]
-        public int FileSize { get; set; }
-
-        [Required]
-        [Display(Name = "Maximum available disk space for synchronization")]
-        [FileSize]
-        public int DiskSpace { get; set; }
-        /*
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
-        [DataType(DataType.Password)]
-        [Display(Name = "Password")]
-        public string Password { get; set; }
-
-        [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; }*/
     }
 }
