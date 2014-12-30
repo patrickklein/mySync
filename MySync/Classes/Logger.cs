@@ -28,7 +28,7 @@ namespace My_Sync.Classes
             {
                 Directory.CreateDirectory(path);
             }
-            catch (DirectoryNotFoundException ex)
+            catch (DirectoryNotFoundException)
             {
                 MessageBox.Show("Defined log path not found. Please correct them.");
             }

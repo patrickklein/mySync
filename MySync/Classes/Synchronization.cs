@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -18,36 +19,135 @@ namespace My_Sync.Classes
         private static List<FileSystemWatcher> watcherList = new List<FileSystemWatcher>();
         private static System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         private static List<Tuple<char, SynchronizationItem>> syncItemList = new List<Tuple<char, SynchronizationItem>>();
+        private static bool sync = false;
 
         /// <summary>
         /// Sends the given file/folder to the server address, provided from the related server entry point
         /// </summary>
+        /// <param name="status">defines if the file was added (n), changed (u), or deleted (d)</param>
         /// <param name="file2Sync">file/folder which should be send to the server</param>
         /// <param name="requestUri">server address from the related server entry point</param>
-        public static void SendFileToServer(FileInfo file2Sync, string requestUri)
+        /// <param name="syncFolderPath">path from the related server entry point</param>
+        public static void SendFileToServer(string status, FileInfo file2Sync, string requestUri, string syncFolderPath)
         {
-            using (new Logger(file2Sync, requestUri))
+            using (new Logger(status, file2Sync, requestUri))
             {
                 using (var client = new HttpClient())
                 {
                     using (var content = new MultipartFormDataContent())
                     {
-                        var fileContent = new ByteArrayContent(File.ReadAllBytes(file2Sync.FullName));
-                        fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                        {
-                            FileName = file2Sync.Name,
-                            Name = "uploadedFile"
-                        };
-                        content.Add(fileContent);
-                        content.Add(new StringContent(file2Sync.CreationTime.ToString()), "creationTime");
-                        content.Add(new StringContent(file2Sync.LastWriteTime.ToString()), "lastWriteTime");
-                        content.Add(new StringContent(file2Sync.LastAccessTime.ToString()), "lastAccessTime");
-                        content.Add(new StringContent(file2Sync.Length.ToString()), "length");
-                        content.Add(new StringContent(file2Sync.Directory.ToString()), "directory");
+                        ItemInfo info = new ItemInfo();
+                        info.GetInfo(file2Sync.FullName);
 
-                        var result = client.PostAsync(requestUri, content).Result;
+                        //if the item is a file, load content to server
+                        if (info.FolderFlag == false)
+                        {
+                            string path = Path.Combine(info.Directory, info.FullName);
+                            var fileContent = new ByteArrayContent(File.ReadAllBytes(path));
+                            fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                            {
+                                FileName = HttpUtility.UrlEncode(file2Sync.Name),
+                                Name = "uploadedFile"
+                            };
+
+                            content.Add(fileContent);
+                        }
+
+                        content.Add(new StringContent(info.FullPath.Replace(syncFolderPath, "").Trim('\\')), "fromRootToFolder");
+                        content.Add(new StringContent(syncFolderPath.Split('\\').Last()), "syncRoot");
+                        content.Add(new StringContent(info.FullPath), "fullPath");
+                        content.Add(new StringContent(info.RootFolder), "rootFolder");
+                        content.Add(new StringContent(info.FolderFlag.ToString()), "folderFlag");
+                        content.Add(new StringContent(status.ToLower()), "status");
+                        content.Add(new StringContent(info.Size.ToString()), "length");
+                        content.Add(new StringContent(info.CreationTime.ToString()), "creationTime");
+                        content.Add(new StringContent(info.LastWriteTime.ToString()), "lastWriteTime");
+                        content.Add(new StringContent(info.LastAccessTime.ToString()), "lastAccessTime");
+                        content.Add(new StringContent(info.Directory), "directory");
+                        content.Add(new StringContent(info.Extension), "extension");
+                        content.Add(new StringContent(info.Files.ToString()), "files");
+                        content.Add(new StringContent(info.Folders.ToString()), "folders");
+                        content.Add(new StringContent(info.FullName), "fullName");
+
+                        try
+                        {
+                            var result = client.PostAsync(requestUri, content).Result;
+                        }
+                        catch (Exception ex) { throw ex; }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the given folder/file on the server
+        /// </summary>
+        /// <param name="requestUri">server address from the related server entry point</param>
+        /// <param name="rootFolder">folder to delete (if file is empty) or root path of file to delete</param>
+        /// <param name="file">file to delete if given</param>
+        public static void DeleteFromServer(string requestUri, string rootFolder, string file = "")
+        {
+            using (new Logger(requestUri, rootFolder, file))
+            {
+                using (var client = new HttpClient())
+                {
+                    using (var content = new MultipartFormDataContent())
+                    {
+                        content.Add(new StringContent(rootFolder), "directory");
+                        content.Add(new StringContent(file), "fullName");
+
+                        try
+                        {
+                            var result = client.PostAsync(requestUri, content).Result;
+                        }
+                        catch (Exception ex) { throw ex; }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets all ToSync items from the database and start to transfer the data/changes to the related server
+        /// </summary>
+        private static void StartSynchronize()
+        {
+            using (new Logger())
+            {
+                while(true) 
+                {
+                    ToSync toSyncItem = DAL.GetNextToSync();
+                    if (toSyncItem == null) break;
+
+                    SynchronizationItem item = DAL.GetSynchronizationItem((long)toSyncItem.synchronizationItemId);
+                    ServerEntryPoint entryPoint = DAL.GetServerEntryPoint((long)item.serverEntryPointId);
+                    FileInfo file = new FileInfo(Path.Combine(item.path, item.fullname));
+
+                    try
+                    {
+                        if (toSyncItem.syncType == "d")
+                        {
+                            string folder = Path.Combine(entryPoint.folderpath.Split('\\').Last(), item.path.Replace(entryPoint.folderpath, "").Trim('\\'));
+                            DeleteFromServer(entryPoint.serverurl.Replace("/Upload", "/Delete"), folder, item.fullname);
+                        }
+                        else SendFileToServer(toSyncItem.syncType, file, entryPoint.serverurl, entryPoint.folderpath);
+
+                        DAL.AddItemToHistory(item.fullname, toSyncItem.syncType, Convert.ToBoolean(item.folderFlag), entryPoint.description);
+                        DAL.DeleteToSync(toSyncItem.id);
+                        
+                        if (toSyncItem.syncType == "d") 
+                            DBDeleteSynchronizationItem(item.fullname, item.path);
+
+                        RefreshHistoryEntries();
+                    }
+                    catch (Exception ex) 
+                    {
+                        new Logger().Log(String.Format("{0}: {1}", file.FullName, ex.Message.ToString()));
+                        break;
+                    }
+                }
+
+                sync = false;
+                MemoryManagement.Reduce();
             }
         }
 
@@ -98,15 +198,17 @@ namespace My_Sync.Classes
         #region Timer
 
         /// <summary>
-        /// MEthod for starting a countdown to synchronize new/deleted or changed files and folders
+        /// Method for starting a countdown to synchronize new/deleted or changed files and folders
         /// </summary>
-        private static void StartTimer()
+        public static void StartTimer()
         {
             using (new Logger())
             {
+                if (timer.Enabled) timer.Stop();
                 MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
                 string selectedTime = ((ContentControl)(mainWindow.GeneralCBInterval.SelectedItem)).Uid.ToString();
-                timer.Interval = Convert.ToInt32(selectedTime) * 1000;
+                timer.Interval = Convert.ToInt32(selectedTime) * 60 * 1000;
+                timer.Interval = 5000;
                 timer.Tick += new EventHandler(Timer_Tick);
                 timer.Start();
             }
@@ -121,9 +223,11 @@ namespace My_Sync.Classes
         {
             try
             {
-                //if (lastChecked.AddMinutes(Convert.ToInt32(cbIntervall.Text) * 60 + 5) < DateTime.Now) startThread = false;
-
-                //CheckConnection();
+                if (!sync)
+                {
+                    sync = true;
+                    Task.Run(() => StartSynchronize());
+                }
             }
             catch (ThreadAbortException)
             {
@@ -182,13 +286,11 @@ namespace My_Sync.Classes
                 newItem.serverEntryPointId = point.id;
                 
                 ToSync sync = new ToSync();
-                sync.syncType = "n";
-                sync.synchronizationItemId = newItem.id;
+                sync.syncType = "n"; 
 
                 //make changes in the database
-                DAL.AddSynchronizationItem(newItem);
-                DAL.AddToSync(sync);
-                DAL.AddItemToHistory(item.Filename, sync.syncType, item.FolderFlag, serverDescription);
+                sync.synchronizationItemId = DAL.AddSynchronizationItem(newItem);
+                if (sync.synchronizationItemId != -1) DAL.AddToSync(sync);
 
                 return newItem;
             }
@@ -206,7 +308,7 @@ namespace My_Sync.Classes
             using (new Logger(path, oldName, newName))
             {
                 if (String.IsNullOrEmpty(newName)) newName = oldName;
-                string parentPath = path.Replace(path.Split('\\').Last(), "").TrimEnd('\\');
+                string parentPath = path.TrimEnd(path.Split('\\').Last().ToCharArray()).TrimEnd('\\');
                 oldName = (oldName.Contains('\\')) ? oldName.Split('\\').Last() : oldName;
                 newName = (newName.Contains('\\')) ? newName.Split('\\').Last() : newName;
 
@@ -222,7 +324,6 @@ namespace My_Sync.Classes
                 //make changes in the database
                 DAL.UpdateSynchronizationItem(toRename);
                 DAL.AddToSync(sync);
-                DAL.AddItemToHistory(item.Filename, sync.syncType, item.FolderFlag, "");
                 
                 return toRename;
             }
@@ -251,14 +352,32 @@ namespace My_Sync.Classes
                             DAL.DeleteSynchronizationItem(item);
                     }
 
+                    DAL.DeleteSynchronizationItem(toDelete);
+                }
+
+                return toDelete;
+            }
+        }
+
+        /// <summary>
+        /// Deletes a synchronization item from the database chosen by the given attributes
+        /// </summary>
+        /// <param name="name">filename or foldername</param>
+        /// <param name="path">full path</param>
+        /// <returns>item which was deleted from the database</returns>
+        private static SynchronizationItem DBAddDeletion(string name, string path)
+        {
+            using (new Logger(name, path))
+            {
+                SynchronizationItem toDelete = DAL.GetSynchronizationItem(name, path);
+
+                //if it was a folder, delete all contained files/folder 
+                if (toDelete != null)
+                {
                     ToSync sync = new ToSync();
                     sync.syncType = "d";
                     sync.synchronizationItemId = toDelete.id;
-
-                    //make changes in the database
-                    DAL.DeleteSynchronizationItem(toDelete);
                     DAL.AddToSync(sync);
-                    DAL.AddItemToHistory(toDelete.name, sync.syncType, Convert.ToBoolean(toDelete.folderFlag), "");
                 }
 
                 return toDelete;
@@ -277,15 +396,18 @@ namespace My_Sync.Classes
         {
             using(new Logger(directory)) 
             {
-                FileSystemWatcher fsw = new FileSystemWatcher(directory, "*.*");
-                fsw.EnableRaisingEvents = true;
-                fsw.IncludeSubdirectories = true;
-                fsw.Created += fsw_Created;
-                fsw.Changed += fsw_Changed;
-                fsw.Renamed += fsw_Renamed;
-                fsw.Deleted += fsw_Deleted;
+                if (Directory.Exists(directory))
+                {
+                    FileSystemWatcher fsw = new FileSystemWatcher(directory, "*.*");
+                    fsw.EnableRaisingEvents = true;
+                    fsw.IncludeSubdirectories = true;
+                    fsw.Created += fsw_Created;
+                    fsw.Changed += fsw_Changed;
+                    fsw.Renamed += fsw_Renamed;
+                    fsw.Deleted += fsw_Deleted;
 
-                watcherList.Add(fsw);
+                    watcherList.Add(fsw);
+                }
             }
         }
 
@@ -299,6 +421,7 @@ namespace My_Sync.Classes
                 //Creates a filewatcher for every server entry point
                 DeleteWatcher();
                 DAL.GetServerEntryPoints().ForEach(x => Synchronization.AddWatcher(x.Folder));
+                StartTimer();
             }
         }
 
@@ -324,9 +447,9 @@ namespace My_Sync.Classes
             using (new Logger(objectRenamed, e))
             {
                 //Delay is given to the thread for avoiding same process to be repeated
-                Thread.Sleep(100);
+                Thread.Sleep(250);
                 DBUpdateSynchronizationItem(e.FullPath, e.OldName, e.Name);
-                RefreshHistoryEntries();
+                MemoryManagement.Reduce();
             }
         }
 
@@ -340,12 +463,11 @@ namespace My_Sync.Classes
             using (new Logger(objectDeleted, e))
             {
                 //Delay is given to the thread for avoiding same process to be repeated
-                Thread.Sleep(100);
-
+                Thread.Sleep(250);
                 string name = e.FullPath.Split('\\').Last();
                 string path = e.FullPath.Replace(name, "").TrimEnd('\\');
-                DBDeleteSynchronizationItem(name, path);
-                RefreshHistoryEntries();
+                DBAddDeletion(name, path);
+                MemoryManagement.Reduce();
             }
         }
 
@@ -359,9 +481,9 @@ namespace My_Sync.Classes
             using (new Logger(objectChanged, e))
             {
                 //Delay is given to the thread for avoiding same process to be repeated
-                Thread.Sleep(100);
+                Thread.Sleep(250);
                 DBUpdateSynchronizationItem(e.FullPath, e.Name);
-                RefreshHistoryEntries();
+                MemoryManagement.Reduce();
             }
         }
 
@@ -375,13 +497,14 @@ namespace My_Sync.Classes
             using (new Logger(objectCreated, e))
             {
                 //Delay is given to the thread for avoiding same process to be repeated
-                Thread.Sleep(100);
+                Thread.Sleep(250);
+
                 ItemInfo newItem = new ItemInfo();
                 newItem.GetInfo(e.FullPath);
 
                 string description = DAL.GetServerEntryPointByPath(((FileSystemWatcher)objectCreated).Path).description;
                 AddToDatabase(newItem, description);
-                RefreshHistoryEntries();
+                MemoryManagement.Reduce();
             }
         }
 

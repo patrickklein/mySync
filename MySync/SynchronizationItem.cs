@@ -15,7 +15,7 @@ namespace My_Sync
     public partial class SynchronizationItem
     {
         public long id { get; set; }
-        public Nullable<decimal> serverEntryPointId { get; set; }
+        public Nullable<long> serverEntryPointId { get; set; }
         public string name { get; set; }
         public string fullname { get; set; }
         public string extension { get; set; }

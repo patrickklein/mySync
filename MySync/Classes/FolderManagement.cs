@@ -69,6 +69,9 @@ namespace My_Sync.Classes
 
                 SetFolderIcon(favoriteFolder);
                 CreateShortcutFavorites(folderName, favoriteFolder);
+
+                //Create shortcut to folders entered in the server section
+                DAL.GetServerEntryPoints().ForEach(x => CreateShortcut(x.Description, x.Folder));
             }
         }
 
@@ -216,6 +219,7 @@ namespace My_Sync.Classes
         private string directory;
         private string extension;
         private string fullPath;
+        private string rootFolder;
         private DateTime creationTime;
         private DateTime lastAccessTime;
         private DateTime lastWriteTime;
@@ -254,6 +258,12 @@ namespace My_Sync.Classes
         {
             get { return fullPath; }
             set { fullPath = value; }
+        }
+
+        public string RootFolder
+        {
+            get { return rootFolder; }
+            set { rootFolder = value; }
         }
 
         public DateTime CreationTime
@@ -323,17 +333,22 @@ namespace My_Sync.Classes
                         this.Directory = ((FileInfo)info).DirectoryName;
                         this.Extension = info.Extension;
                         this.FullPath = ((FileInfo)info).DirectoryName.TrimEnd('\\');
-                        this.Filename = info.Name.Replace(info.Extension, "");
+                        this.Filename = (info.Extension == "") ? info.Name : info.Name.Replace(info.Extension, "");
+                        this.RootFolder = ((FileInfo)(info)).Directory.Name;
                     }
 
                     //get attributes for directory
                     if (new DirectoryInfo(fullName).Exists)
                     {
+                        
                         info = new DirectoryInfo(fullName);
+                        int lastindex = info.FullName.TrimEnd('\\').LastIndexOf('\\');
+                        this.FullPath = info.FullName.Substring(0, lastindex);
                         this.FolderFlag = true;
                         this.Size = ((DirectoryInfo)info).GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
                         this.Directory = info.Name;
-                        this.FullPath = info.FullName.Replace(info.Name, "").TrimEnd('\\');
+                        this.Extension = "";
+                        this.RootFolder = ((DirectoryInfo)(info)).Parent.Name;
                     }
 
                     this.LastAccessTime = info.LastAccessTime;

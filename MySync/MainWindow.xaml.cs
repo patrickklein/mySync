@@ -42,6 +42,8 @@ namespace My_Sync
                     InitializeComponent();
                     InitializeObjects();
                     InitializePopup();
+
+                    Synchronization.StartTimer();
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +90,7 @@ namespace My_Sync
                 HistoryRTBHistory.AppendText(DAL.GetHistory());      
          
                 //Creates a filewatcher for every server entry point
-                DAL.GetServerEntryPoints().ForEach(x => Synchronization.AddWatcher(x.Folder));
+                Synchronization.RefreshWatcher();
             }
         }
 
@@ -195,6 +197,7 @@ namespace My_Sync
 
                     //save selection to settings
                     Helper.SaveSetting("synchronizationInterval", uid);
+                    Synchronization.RefreshWatcher();
                 }
             }
         }
@@ -211,13 +214,9 @@ namespace My_Sync
             {
                 bool status = (bool)GeneralCBXFastSync.IsChecked;
                 if (status)
-                {
-                    GeneralCBInterval.SelectedIndex = -1;
                     GeneralCBInterval.IsEnabled = false;
-                }
                 else
                 {
-                    Synchronization.SendFileToServer(new FileInfo(@"C:\Users\Patrick\Desktop\Hive Operators and Functions.mp4"), "http://localhost:51992/Account/Upload");
                     GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
                     GeneralCBInterval.IsEnabled = true;
                 }
@@ -424,6 +423,7 @@ namespace My_Sync
 
                 SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
                 DAL.DeleteServerEntryPoint(selectedSyncPoint.Description);
+                Synchronization.DeleteFromServer(selectedSyncPoint.Server.Replace("/Upload", "/Delete"), selectedSyncPoint.Folder.Split('\\').Last());
 
                 ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
                 ServerDGSynchronizationPoints.Items.Refresh();
@@ -483,8 +483,8 @@ namespace My_Sync
                 AddToFavorites_Check(sender, e);
 
                 //Adds all files and directories to the database
-                Synchronization.DBAddAllFromFolder(point);
                 Synchronization.RefreshWatcher();
+                Task.Run(() => Synchronization.DBAddAllFromFolder(point));
             }
         }
 

@@ -108,7 +108,7 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
-          <Property Name="serverEntryPointId" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="serverEntryPointId" Type="Int64" />
           <Property Name="name" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="fullname" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="extension" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
@@ -129,7 +129,7 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
-          <Property Name="synchronizationItemId" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="synchronizationItemId" Type="Int64" />
           <Property Name="syncType" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
       </Schema>
