@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MySync.Server.Configuration;
+using NHibernate;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -16,6 +18,11 @@ namespace MySync.Server
     {
         protected void Application_Start()
         {
+            //Create Database instance
+            NHibernate.Cfg.Configuration configuration = new NHibernate.Cfg.Configuration();
+            configuration.Configure();
+            ApplicationCore.Instance.SessionFactory = configuration.BuildSessionFactory();
+
             AreaRegistration.RegisterAllAreas();
 
             WebApiConfig.Register(GlobalConfiguration.Configuration);

@@ -44,14 +44,14 @@ namespace MySync.Server.Models
         }
     }
 
-    public class UsersContext : DbContext
+    /*public class UsersContext : DbContext
     {
         public UsersContext() : base("DefaultConnection")
         {
         }
 
         public DbSet<UserProfile> UserProfiles { get; set; }
-    }
+    }*/
 
     [Table("UserProfile")]
     public class UserProfile
@@ -76,7 +76,7 @@ namespace MySync.Server.Models
         [Required]
         [Display(Name = "Maximum available disk space for synchronization")]
         [FileSize]
-        public int DiskSpace { get; set; }
+        public long DiskSpace { get; set; }
 
         [Required]
         [Display(Name = "Type of data saving")]

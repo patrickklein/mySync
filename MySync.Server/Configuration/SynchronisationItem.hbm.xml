@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MySync.Server" namespace="MySync.Server.DAL">
+
+  <class name="SynchronisationItem" table="synchronisationitem">
+    <id name="Id" column="id" type="Int64">
+      <generator class="sequence">
+        <param name="sequence">SynchronisationItem_id_seq</param>
+      </generator>
+    </id>
+
+    <property name="Name" column="name" type="String"/>
+    <property name="Extension" column="extension" type="String"/>
+    <property name="Fullname" column="fullname" type="String"/>
+    <property name="CreationTime" column="creationtime" type="String"/>
+    <property name="LastAccessTime" column="lastaccesstime" type="String"/>
+    <property name="LastWriteTime" column="lastwritetime" type="String"/>
+    <property name="LastSyncTime" column="lastsynctime" type="String"/>
+    <property name="Size" column="size" type="Int64"/>
+    <property name="FolderFlag" column="folderflag" type="Boolean"/>
+    <property name="HiddenFlag" column="hiddenflag" type="Boolean"/>
+    <property name="SystemFlag" column="systemflag" type="Boolean"/>
+    <property name="Files" column="files" type="Int64"/>
+    <property name="Folders" column="folders" type="Int64"/>
+    <property name="Path" column="path" type="String"/>
+  </class>
+
+</hibernate-mapping>

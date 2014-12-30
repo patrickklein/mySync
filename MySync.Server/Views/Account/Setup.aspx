@@ -17,6 +17,7 @@
                 <tr>
                     <td><%: Html.LabelFor(m => m.DataProfile, new { @class = "checkbox" }) %><b>:</b></td>
                     <td style="height:50px"><%: Html.DropDownListFor(m => m.DataProfile, new SelectList(ViewBag.DPClasses, "Key", "Value"), new { style = "width:312px;height:35px" })%></td>
+                    <td><%: Html.ValidationMessageFor(m => m.DataProfile) %></td>
                 </tr>
                 <!--<tr>
                     <td><%: Html.LabelFor(m => m.Path, new { @class = "checkbox" }) %><b>:</b></td>
@@ -25,7 +26,7 @@
                 </tr>-->
                 <tr>
                     <td><%: Html.LabelFor(m => m.DiskSpace, new { @class = "checkbox" }) %><b>:</b></td>
-                    <td><%: Html.TextBoxFor(m => m.DiskSpace) %></td>
+                    <td><%: Html.TextBoxFor(m => m.DiskSpace)%></td>
                     <td><%: Html.ValidationMessageFor(m => m.DiskSpace) %></td>
                 </tr>
                 <tr>

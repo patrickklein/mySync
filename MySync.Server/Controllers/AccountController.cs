@@ -16,6 +16,8 @@ using System.Configuration;
 using MySync.Server.DataProfile;
 using System.Collections.Specialized;
 using System.Reflection;
+using MySync.Server.DAL;
+using MySync.Server.Configuration;
 
 namespace MySync.Server.Controllers
 {
@@ -32,6 +34,7 @@ namespace MySync.Server.Controllers
             // existing DataProfile Classes from web.config file
             NameValueCollection appSettings = ConfigurationManager.AppSettings;
             Dictionary<string, string> dpClasses = new Dictionary<string, string>();
+            dpClasses.Add("", "");
             List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
             foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
             ViewBag.DPClasses = dpClasses;
@@ -39,7 +42,22 @@ namespace MySync.Server.Controllers
             HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
             ViewBag.MaxFileSize = section.MaxRequestLength / 1024 / 1000;
             ViewBag.ReturnUrl = returnUrl;
-            return View();
+
+            //Get values from database
+            SetupModel model = new SetupModel();
+            ConfigurationService configService = new ConfigurationService();
+            configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+            DAL.Configuration config = configService.Get("dataSavingPoint");
+            model.DataProfile = (config != null) ? config.Value : "";
+            
+            config = configService.Get("maxFileSize");
+            model.FileSize = (config != null) ? Convert.ToInt32(config.Value) : 0;
+
+            config = configService.Get("maxDiskSpace");
+            model.DiskSpace = (config != null) ? Convert.ToInt32(config.Value) : 0;
+
+            return View(model);
         }
 
         //
@@ -49,24 +67,40 @@ namespace MySync.Server.Controllers
         [AllowAnonymous]
         public ActionResult Setup(SetupModel model, string returnUrl)
         {
-            // If we got this far, something failed, redisplay form
+            //Get values from database
+            ConfigurationService configService = new ConfigurationService();
+            configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+            DAL.Configuration config = configService.Get("dataSavingPoint");
+            ViewBag.SavedDataSavingPoint = (config != null) ? config.Value : "";
+
+            config = configService.Get("maxFileSize");
+            ViewBag.SavedMaxFileSize = (config != null) ? config.Value : "";
+
+            config = configService.Get("maxDiskSpace");
+            ViewBag.SavedMaxDiskSpace = (config != null) ? config.Value : "";
+
             HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            int maxFilesize = section.MaxRequestLength / 1024 /1000;
+            int maxFilesize = section.MaxRequestLength / 1024 / 1000;
             ViewBag.MaxFileSize = maxFilesize;
-            ViewBag.DiskSpace = "123 Mb";
 
             // existing DataProfile Classes from web.config file
             NameValueCollection appSettings = ConfigurationManager.AppSettings;
             Dictionary<string, string> dpClasses = new Dictionary<string, string>();
+            dpClasses.Add("", "");
             List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
             foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
             ViewBag.DPClasses = dpClasses;
 
             //check all given values from the view
-            if (model.FileSize < 0 || model.FileSize > maxFilesize)
+            if (model.FileSize >= 0 && model.FileSize <= maxFilesize && model.DiskSpace >= 0 && model.DataProfile != "")
             {
-                ModelState.AddModelError("", "Please correct all errors to save your settings.");
+                //Save data to database
+                configService.Update(new DAL.Configuration() { Field = "dataSavingPoint", Value = model.DataProfile });
+                configService.Update(new DAL.Configuration() { Field = "maxFileSize", Value = model.FileSize.ToString() });
+                configService.Update(new DAL.Configuration() { Field = "maxDiskSpace", Value = model.DiskSpace.ToString() });
             }
+
             return View(model);
         }
 
@@ -81,14 +115,61 @@ namespace MySync.Server.Controllers
             {                
                 HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
-                string className = "DPFileSystem";
+                ConfigurationService configService = new ConfigurationService();
+                configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+                DAL.Configuration config = configService.Get("dataSavingPoint");
+                string className = (config != null) ? config.Value : "";
                 DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
                 newContent.SetSection(Server, Request, section);
                 newContent.SaveFile();
+
+                //Add file values to database
+                SynchronisationItemService syncItemservice = new SynchronisationItemService();
+                syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+                DAL.SynchronisationItem item = new SynchronisationItem();
+                item.Name = newContent.Filename;
+                item.Fullname = newContent.FullName;
+                item.Extension = newContent.Extension;
+                item.Size = newContent.Length;
+                item.Files = newContent.Files;
+                item.Folders = newContent.Folders;
+                item.FolderFlag = newContent.IsFolder;
+                item.Path = newContent.FullPath;
+                item.LastWriteTime = newContent.LastWriteTime;
+                item.LastSyncTime = DateTime.Now;
+                item.LastAccessTime = newContent.LastAccessTime;
+                item.CreationTime = newContent.CreationTime;
+                //item.HiddenFlag = false;
+                //item.SystemFlag = false;
+                syncItemservice.Add(item);
             }
 
             return RedirectToAction("Setup", "Account");
         }
+
+        //
+        // POST: /Account/Delete
+
+        [AllowAnonymous]
+        [HttpPost]
+        public ActionResult Delete(FormCollection formCollection)
+        {
+            if (Request != null)
+            {
+                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+
+                string className = "DPFileSystem";
+                DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
+                newContent.SetSection(Server, Request, section);
+                newContent.DeleteAll();
+            }
+
+            return RedirectToAction("Setup", "Account");
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         //
         // GET: /Account/Login

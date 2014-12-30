@@ -15,6 +15,11 @@ namespace MySync.Server.DataProfile
         public override void SaveFile() { }
 
         /// <summary>
+        /// Method for deleting all files
+        /// </summary>
+        public override void DeleteAll() { }
+
+        /// <summary>
         /// Takes the server request and reads the file/folder attributes which are needed to progress the data contents
         /// </summary>
         /// <param name="Server">HttpServerUtilityBase from asp.net page</param>
