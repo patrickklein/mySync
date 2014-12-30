@@ -4,7 +4,7 @@
   <class name="SynchronisationItem" table="synchronisationitem">
     <id name="Id" column="id" type="Int64">
       <generator class="sequence">
-        <param name="sequence">SynchronisationItem_id_seq</param>
+        <param name="sequence">synchronisationitem_id_seq</param>
       </generator>
     </id>
 

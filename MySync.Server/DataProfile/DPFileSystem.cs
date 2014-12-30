@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MySync.Server.Configuration;
+using MySync.Server.DAL;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,6 +17,8 @@ namespace MySync.Server.DataProfile
         /// </summary>
         public override void SaveFile() 
         {
+            string path = null;
+
             //if it is a file
             if (!IsFolder && File != null && File.ContentLength < MaxRequestLength && !string.IsNullOrEmpty(File.FileName))
             {
@@ -23,7 +27,7 @@ namespace MySync.Server.DataProfile
 
                 //Create directory if not exists
                 new DirectoryInfo(Path.Combine(Server.MapPath("~/App_Data"), SyncRootFolder, FromRootToFolder)).Create();
-                var path = Path.Combine(Server.MapPath("~/App_Data"), SyncRootFolder, FromRootToFolder, Filename);
+                path = Path.Combine(Server.MapPath("~/App_Data"), SyncRootFolder, FromRootToFolder, Filename);
                 File.SaveAs(path);
 
                 System.IO.File.SetLastAccessTime(path, LastAccessTime);
@@ -35,7 +39,7 @@ namespace MySync.Server.DataProfile
             if(IsFolder) 
             {
                 //Create directory if not exists
-                var path = Path.Combine(Server.MapPath("~/App_Data"), SyncRootFolder, FromRootToFolder, Directory);
+                path = Path.Combine(Server.MapPath("~/App_Data"), SyncRootFolder, FromRootToFolder, Directory);
 
                 DirectoryInfo dirInfo = new DirectoryInfo(path);
                 dirInfo.Create();
@@ -45,6 +49,9 @@ namespace MySync.Server.DataProfile
                 //System.IO.Directory.SetLastWriteTime(path, LastAccessTime);
                 //System.IO.Directory.SetCreationTime(path, LastAccessTime);
             }
+
+            //Add/update file/folder values to database
+            UpdateItemDB(path);
         }
 
         /// <summary>
@@ -54,18 +61,27 @@ namespace MySync.Server.DataProfile
         {
             var path = Path.Combine(Server.MapPath("~/App_Data"), Directory, FullName);
 
-            if (!String.IsNullOrEmpty(FullName))
+            try
             {
-                FileInfo fileInfo = new FileInfo(path);
-                fileInfo.Attributes = FileAttributes.Normal;
-                System.IO.File.Delete(path);
+                if (!String.IsNullOrEmpty(FullName))
+                {
+                    //FileInfo fileInfo = new FileInfo(path);
+                    //fileInfo.Attributes = FileAttributes.Normal;
+                    System.IO.File.Delete(path);
+                }
+                else
+                {
+                    //DirectoryInfo dirInfo = new DirectoryInfo(path);
+                    //dirInfo.Attributes = FileAttributes.Normal;
+                    System.IO.Directory.Delete(path, true);
+                }
             }
-            else
+            catch (Exception)
             {
-                DirectoryInfo dirInfo = new DirectoryInfo(path);
-                dirInfo.Attributes = FileAttributes.Normal;
-                System.IO.Directory.Delete(path, true);
             }
+
+            //delete file/folder values from database
+            DeleteItemDB(path);
         }
 
         /// <summary>
@@ -78,6 +94,78 @@ namespace MySync.Server.DataProfile
         public override void SetSection(HttpServerUtilityBase Server, HttpRequestBase Request, HttpRuntimeSection Section) 
         {
             base.SetSection(Server, Request, Section);
+        }
+
+        
+        ///////////////////////////////////////// DB Functions /////////////////////////////////////////
+
+        /// <summary>
+        /// Add file/folder values to database
+        /// </summary>
+        /// <param name="path">path of the file/folder on the server</param>
+        private void AddItemDB(string path)
+        {
+            SynchronisationItemService syncItemservice = new SynchronisationItemService();
+            syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+            DAL.SynchronisationItem item = new SynchronisationItem();
+            item.Name = Filename;
+            item.Fullname = FullName;
+            item.Extension = Extension;
+            item.Size = Length;
+            item.Files = Files;
+            item.Folders = Folders;
+            item.FolderFlag = IsFolder;
+            item.Path = path;
+            item.LastWriteTime = LastWriteTime.ToString();
+            item.LastSyncTime = DateTime.Now.ToString();
+            item.LastAccessTime = LastAccessTime.ToString();
+            item.CreationTime = CreationTime.ToString();
+            //item.HiddenFlag = false;
+            //item.SystemFlag = false;
+            syncItemservice.Add(item);
+        }
+
+        /// <summary>
+        /// Update file/folder values in the database
+        /// </summary>
+        /// <param name="path">path of the file/folder on the server</param>
+        private void UpdateItemDB(string path)
+        {
+            SynchronisationItemService syncItemservice = new SynchronisationItemService();
+            syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+            SynchronisationItem item = syncItemservice.Get(path);
+            if (item == null) AddItemDB(path);
+            else
+            {
+                item.Name = Filename;
+                item.Fullname = FullName;
+                item.Extension = Extension;
+                item.Size = Length;
+                item.Files = Files;
+                item.Folders = Folders;
+                item.FolderFlag = IsFolder;
+                item.Path = path;
+                item.LastWriteTime = LastWriteTime.ToString();
+                item.LastSyncTime = DateTime.Now.ToString();
+                item.LastAccessTime = LastAccessTime.ToString();
+                item.CreationTime = CreationTime.ToString();
+                //item.HiddenFlag = false;
+                //item.SystemFlag = false;
+                syncItemservice.Update(item);
+            }
+        }
+
+        /// <summary>
+        /// Delete file/folder values from database
+        /// </summary>
+        /// <param name="path">path of the file/folder on the server</param>
+        private void DeleteItemDB(string path)
+        {
+            SynchronisationItemService syncItemservice = new SynchronisationItemService();
+            syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+            syncItemservice.Delete(path);
         }
     }
 }

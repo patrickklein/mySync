@@ -11,10 +11,10 @@ namespace MySync.Server.DAL
         public virtual String Name { get; set; }
         public virtual String Extension { get; set; }
         public virtual String Fullname { get; set; }
-        public virtual DateTime CreationTime { get; set; }
-        public virtual DateTime LastAccessTime { get; set; }
-        public virtual DateTime LastWriteTime { get; set; }
-        public virtual DateTime LastSyncTime { get; set; }
+        public virtual String CreationTime { get; set; }
+        public virtual String LastAccessTime { get; set; }
+        public virtual String LastWriteTime { get; set; }
+        public virtual String LastSyncTime { get; set; }
         public virtual long Size { get; set; }
         public virtual Boolean FolderFlag { get; set; }
         public virtual Boolean HiddenFlag { get; set; }
@@ -42,7 +42,6 @@ namespace MySync.Server.DAL
         /// <param name="synchronisationItem">object to save</param>
         public void Add(SynchronisationItem synchronisationItem)
         {
-            //if (String.IsNullOrEmpty(synchronisationItem.Value)) return;
             base.Add(synchronisationItem);
         }
 
@@ -67,10 +66,21 @@ namespace MySync.Server.DAL
         /// <summary>
         /// Deletes the database entry of the given SynchronisationItem object
         /// </summary>
-        /// <param name="synchronisationItem">object to update</param>
+        /// <param name="synchronisationItem">object to delete</param>
         public void Delete(SynchronisationItem synchronisationItem)
         {
             base.Delete(synchronisationItem);
+        }
+        
+        /// <summary>
+        /// Deletes the database entry of the given path (directory and filename)
+        /// </summary>
+        /// <param name="fullPath">directory and filename</param>
+        public void Delete(string fullPath)
+        {
+            List<SynchronisationItem> existingItems = base.GetAll<SynchronisationItem>().Where(x => x.Path.StartsWith(fullPath)).ToList<SynchronisationItem>();
+            foreach(SynchronisationItem item in existingItems)
+                base.Delete(item);
         }
     }
 }

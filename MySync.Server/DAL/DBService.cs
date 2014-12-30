@@ -48,7 +48,7 @@ namespace MySync.Server.DAL
         /// <summary>
         /// Deletes the database entry of the given object, based on the object type (for retrieving the right table)
         /// </summary>
-        /// <param name="obj">object to update</param>
+        /// <param name="obj">object to delete</param>
         public void Delete(Object obj)
         {
             using (var transaction = _mSession.BeginTransaction())
@@ -59,7 +59,7 @@ namespace MySync.Server.DAL
         }
 
         /// <summary>
-        // Gets a list of all existing elements/rows of a table basen on the given object type (for retrieving the right table)
+        /// Gets a list of all existing elements/rows of a table basen on the given object type (for retrieving the right table)
         /// </summary>
         /// <typeparam name="Entity">object type for retrieving the right table</typeparam>
         /// <returns>list of elements from the type related table</returns>

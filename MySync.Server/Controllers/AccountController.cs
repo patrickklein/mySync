@@ -123,27 +123,6 @@ namespace MySync.Server.Controllers
                 DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
                 newContent.SetSection(Server, Request, section);
                 newContent.SaveFile();
-
-                //Add file values to database
-                SynchronisationItemService syncItemservice = new SynchronisationItemService();
-                syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
-
-                DAL.SynchronisationItem item = new SynchronisationItem();
-                item.Name = newContent.Filename;
-                item.Fullname = newContent.FullName;
-                item.Extension = newContent.Extension;
-                item.Size = newContent.Length;
-                item.Files = newContent.Files;
-                item.Folders = newContent.Folders;
-                item.FolderFlag = newContent.IsFolder;
-                item.Path = newContent.FullPath;
-                item.LastWriteTime = newContent.LastWriteTime;
-                item.LastSyncTime = DateTime.Now;
-                item.LastAccessTime = newContent.LastAccessTime;
-                item.CreationTime = newContent.CreationTime;
-                //item.HiddenFlag = false;
-                //item.SystemFlag = false;
-                syncItemservice.Add(item);
             }
 
             return RedirectToAction("Setup", "Account");
@@ -160,7 +139,11 @@ namespace MySync.Server.Controllers
             {
                 HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
-                string className = "DPFileSystem";
+                ConfigurationService configService = new ConfigurationService();
+                configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+                DAL.Configuration config = configService.Get("dataSavingPoint");
+                string className = (config != null) ? config.Value : "";
                 DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
                 newContent.SetSection(Server, Request, section);
                 newContent.DeleteAll();
