@@ -3,6 +3,7 @@ using My_Sync.Classes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -31,7 +32,6 @@ namespace My_Sync
     {
         public string applicationName = "MySync";
         public MySyncEntities dbInstance = new MySyncEntities();
-        private NotifyIcon notifyIcon = new NotifyIcon();
 
         public MainWindow()
         {
@@ -49,10 +49,6 @@ namespace My_Sync
                 {
                     MessageBox.Show(ex.ToString());
                 }
-
-                //notifyIcon.ChangeIcon("Upload");
-                //notifyIcon.ChangeIcon("Download");
-                //notifyIcon.ResetIcon();
                 //CheckInternetConnection.IsConnected
             }
         }
@@ -78,8 +74,8 @@ namespace My_Sync
                 GeneralCBXFastSync.IsChecked = MySync.Default.fastSync;
 
                 //Notification Icon
-                notifyIcon.InitializeNotifyIcon();
-                if (!reinitialization) notifyIcon.ShowWindow(false);
+                NotifyIcon.InitializeNotifyIcon();
+                if (!reinitialization) NotifyIcon.ShowWindow(false);
 
                 //Fill GUI for Server Entry Point, File Filter, History
                 ServerDGSynchronizationPoints.Columns.Clear();
@@ -87,10 +83,13 @@ namespace My_Sync
                 FilterLVFilter.Columns.Clear();
                 FilterLVFilter.ItemsSource = DAL.GetFileFilters();
                 HistoryRTBHistory.Document.Blocks.Clear();
-                HistoryRTBHistory.AppendText(DAL.GetHistory());      
-         
+                HistoryRTBHistory.AppendText(DAL.GetHistory());
+
                 //Creates a filewatcher for every server entry point
                 Synchronization.RefreshWatcher();
+
+                //Checking the filesystem and database for new/changed/deleted files and folders
+                Task.Run(() => Synchronization.CheckForDifferencies());
             }
         }
 
@@ -551,7 +550,7 @@ namespace My_Sync
         {
             using (new Logger(sender, e))
             {
-                notifyIcon.ShowWindow(false);
+                NotifyIcon.ShowWindow(false);
             }
         }
 
@@ -589,7 +588,7 @@ namespace My_Sync
         {
             using (new Logger(sender, e))
             {
-                notifyIcon.SetVisibility(false);
+                NotifyIcon.SetVisibility(false);
             }
         }
 

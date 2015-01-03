@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -80,9 +81,21 @@ namespace My_Sync.Classes
                     
                     if (!exists)
                     {
-                        newToSync.id = GetNextToSyncId();
-                        dbInstance.ToSync.Add(newToSync);
-                        dbInstance.SaveChanges();
+                        Mutex _mutex = new Mutex(false, "ToSync");
+                        bool lockTaken = false;
+
+                        try { lockTaken = _mutex.WaitOne(); }
+                        finally
+                        {
+                            if (lockTaken == true)
+                            {
+                                newToSync.id = GetNextToSyncId();
+                                dbInstance.ToSync.Add(newToSync);
+                                dbInstance.SaveChanges();
+
+                                _mutex.ReleaseMutex();
+                            }
+                        }
 
                         return newToSync.id;
                     }
@@ -210,9 +223,21 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    newHistory.id = DAL.GetNextHistoryId();
-                    dbInstance.History.Add(newHistory);
-                    dbInstance.SaveChanges();
+                    Mutex _mutex = new Mutex(false, "History");
+                    bool lockTaken = false;
+
+                    try { lockTaken = _mutex.WaitOne(); }
+                    finally
+                    {
+                        if (lockTaken == true)
+                        {
+                            newHistory.id = DAL.GetNextHistoryId();
+                            dbInstance.History.Add(newHistory);
+                            dbInstance.SaveChanges();
+
+                            _mutex.ReleaseMutex();
+                        }
+                    }
 
                     return newHistory.id;
                 }
@@ -318,9 +343,21 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    newFilter.id = GetNextFileFilterId();
-                    dbInstance.FileFilter.Add(newFilter);
-                    dbInstance.SaveChanges();
+                    Mutex _mutex = new Mutex(false, "FileFilter");
+                    bool lockTaken = false;
+
+                    try { lockTaken = _mutex.WaitOne(); }
+                    finally
+                    {
+                        if (lockTaken == true)
+                        {
+                            newFilter.id = GetNextFileFilterId();
+                            dbInstance.FileFilter.Add(newFilter);
+                            dbInstance.SaveChanges();
+
+                            _mutex.ReleaseMutex();
+                        }
+                    }
 
                     return newFilter.id;
                 }
@@ -409,14 +446,26 @@ namespace My_Sync.Classes
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
                     ServerEntryPoint newPoint = new ServerEntryPoint();
-                    newPoint.description = newEntryPoint.Description;
-                    newPoint.folderpath = newEntryPoint.Folder;
-                    newPoint.icon = newEntryPoint.ServerType.Name;
-                    newPoint.serverurl = newEntryPoint.Server;
-                    newPoint.id = DAL.GetNextServerEntryPointId();
+                    Mutex _mutex = new Mutex(false, "ServerEntryPoint");
+                    bool lockTaken = false;
 
-                    dbInstance.ServerEntryPoint.Add(newPoint);
-                    dbInstance.SaveChanges();
+                    try { lockTaken = _mutex.WaitOne(); }
+                    finally
+                    {
+                        if (lockTaken == true)
+                        {
+                            newPoint.description = newEntryPoint.Description;
+                            newPoint.folderpath = newEntryPoint.Folder;
+                            newPoint.icon = newEntryPoint.ServerType.Name;
+                            newPoint.serverurl = newEntryPoint.Server;
+                            newPoint.id = DAL.GetNextServerEntryPointId();
+
+                            dbInstance.ServerEntryPoint.Add(newPoint);
+                            dbInstance.SaveChanges();
+
+                            _mutex.ReleaseMutex();
+                        }
+                    }
 
                     return newPoint.id;
                 }
@@ -555,9 +604,21 @@ namespace My_Sync.Classes
 
                     if (!exists)
                     {
-                        newItem.id = DAL.GetNextSynchronizationItemId();
-                        dbInstance.SynchronizationItem.Add(newItem);
-                        dbInstance.SaveChanges();
+                        Mutex _mutex = new Mutex(false, "SynchronizationItem");
+                        bool lockTaken = false;
+
+                        try { lockTaken = _mutex.WaitOne(); }
+                        finally
+                        {
+                            if (lockTaken == true)
+                            {
+                                newItem.id = DAL.GetNextSynchronizationItemId();
+                                dbInstance.SynchronizationItem.Add(newItem);
+                                dbInstance.SaveChanges();
+
+                                _mutex.ReleaseMutex();
+                            }
+                        }
 
                         return newItem.id;
                     }
@@ -578,7 +639,9 @@ namespace My_Sync.Classes
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
                     SynchronizationItem item = dbInstance.SynchronizationItem.ToList().Single(x => x.id == changedItem.id);
-                    item = changedItem;
+                    dbInstance.SynchronizationItem.Remove(item);
+                    dbInstance.SynchronizationItem.Add(changedItem);
+
                     dbInstance.SaveChanges();
                 }
             }
@@ -602,6 +665,24 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
+        /// Returns a synchronization item object based on the stored fullname and path
+        /// </summary>
+        /// <param name="fullname">name of the file/folder</param>
+        /// <param name="path">full path of the file/folder</param>
+        /// <param name="serverPointId">related server point id of the file/folder</param>
+        /// <returns>found synchronization item object</returns>
+        public static SynchronizationItem GetSynchronizationItem(string fullname, string path, long serverPointId)
+        {
+            using (new Logger(fullname, path))
+            {
+                using (MySyncEntities dbInstance = new MySyncEntities())
+                {
+                    return dbInstance.SynchronizationItem.SingleOrDefault(x => x.fullname.Equals(fullname) && x.path.Equals(path) && x.serverEntryPointId == serverPointId);
+                }
+            }
+        }
+
+        /// <summary>
         /// Returns a synchronization item object based on the given id
         /// </summary>
         /// <param name="id">id of the item in the database</param>
@@ -620,7 +701,7 @@ namespace My_Sync.Classes
         /// <summary>
         /// Returns a list of synchronization item objects based on the given path
         /// </summary>
-        /// <param name="path">full path of the file/folder</param>
+        /// <param name="path">full path of the file/folder (starts with)</param>
         /// <returns>list of found synchronization item objects</returns>
         public static List<SynchronizationItem> GetSynchronizationItems(string path)
         {

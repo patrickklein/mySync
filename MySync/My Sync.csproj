@@ -93,6 +93,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Classes\FindFile.cs" />
     <Compile Include="Classes\Synchronization.cs" />
     <Compile Include="DataModel.cs">
       <AutoGen>True</AutoGen>
