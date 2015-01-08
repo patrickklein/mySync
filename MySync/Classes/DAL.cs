@@ -16,53 +16,6 @@ namespace My_Sync.Classes
 {
     static class DAL
     {
-        /// <summary>
-        /// Method for creating the SQLite database if it not exists (extract from embedded resources)
-        /// </summary>
-        public static void CreateDatabase()
-        {
-            using (new Logger())
-            {
-                // Get Current Assembly refrence and all imbedded resources
-                Assembly currentAssembly = Assembly.GetExecutingAssembly();
-                string[] arrResources = currentAssembly.GetManifestResourceNames();
-
-                foreach (string resourceName in arrResources)
-                {
-                    if (resourceName.EndsWith(".db") || resourceName.EndsWith(".dll"))
-                    {
-                        //Name of the file saved on disk
-                        MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
-                        string saveAsName = resourceName.Replace(mainWindow.GetType().Namespace, "").TrimStart('.').Replace("Resources.", "");
-                        string executablePath = Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath);
-
-                        FileInfo fileInfoOutputFile = new FileInfo(Path.Combine(executablePath, saveAsName));
-
-                        if (fileInfoOutputFile.Exists) continue;
-
-                        foreach (Process proc in Process.GetProcessesByName(fileInfoOutputFile.Name.Replace(".exe", "")))
-                            proc.Kill();
-
-                        //open newly creating file for writing and get the stream to the resources
-                        FileStream streamToOutputFile = fileInfoOutputFile.OpenWrite();
-                        Stream streamToResourceFile = currentAssembly.GetManifestResourceStream(resourceName);
-
-                        //save resource to folder
-                        const int size = 4096;
-                        byte[] bytes = new byte[4096];
-                        int numBytes;
-                        while ((numBytes = streamToResourceFile.Read(bytes, 0, size)) > 0)
-                            streamToOutputFile.Write(bytes, 0, numBytes);
-
-                        streamToOutputFile.Close();
-                        streamToResourceFile.Close();
-                    }
-                }
-            }
-        }
-
-        //------------------------------------------------------------------------------------------------//
-
         #region ToSync
 
         /// <summary>
@@ -76,31 +29,31 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    //check if toSync item already exists (saves time through non redundancy for synchronization)
-                    bool exists = CheckExistsToSync(newToSync);
-                    
-                    if (!exists)
-                    {
-                        Mutex _mutex = new Mutex(false, "ToSync");
-                        bool lockTaken = false;
+                    Mutex _mutex = new Mutex(false, "ToSync");
+                    bool lockTaken = false;
+                    bool exists = false;
 
-                        try { lockTaken = _mutex.WaitOne(); }
-                        finally
+                    try { lockTaken = _mutex.WaitOne(); }
+                    catch (AbandonedMutexException ex) { MessageBox.Show(ex.Message.ToString()); }
+                    finally
+                    {
+                        if (lockTaken == true)
                         {
-                            if (lockTaken == true)
+                            //check if toSync item already exists (saves time through non redundancy for synchronization)
+                            exists = CheckExistsToSync(newToSync);
+
+                            if (!exists)
                             {
                                 newToSync.id = GetNextToSyncId();
                                 dbInstance.ToSync.Add(newToSync);
                                 dbInstance.SaveChanges();
-
-                                _mutex.ReleaseMutex();
                             }
-                        }
 
-                        return newToSync.id;
+                            _mutex.ReleaseMutex();
+                        }
                     }
 
-                    return -1;
+                    return (exists) ? -1 : newToSync.id;
                 }
             }
         }
@@ -173,6 +126,22 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
+        /// Checks if there is a ToSync item in the database with the given synchronizationItemId
+        /// </summary>
+        /// <param name="itemId">id of the synchronization item</param>
+        /// <returns>true/false if item exists in the table or not</returns>
+        public static bool ToSyncExists(long itemId)
+        {
+            using (new Logger())
+            {
+                using (MySyncEntities dbInstance = new MySyncEntities())
+                {
+                    return dbInstance.ToSync.ToList().Exists(x => x.synchronizationItemId == itemId);
+                }
+            }
+        }
+
+        /// <summary>
         /// Deletes the ToSync entry from the database with the given synchronization item id
         /// </summary>
         /// <param name="id">id to delete from the database</param>
@@ -199,11 +168,24 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    List<ToSync> items = dbInstance.ToSync.ToList().Where(x => x.synchronizationItemId == item.id).ToList();
-                    foreach (ToSync itemToDelete in items)
-                        dbInstance.ToSync.Remove(itemToDelete);
-                    
-                    dbInstance.SaveChanges();
+                    Mutex _mutex = new Mutex(false, "SynchronizationItem");
+                    bool lockTaken = false;
+
+                    try { lockTaken = _mutex.WaitOne(); }
+                    catch (AbandonedMutexException ex) { MessageBox.Show(ex.Message.ToString()); }
+                    finally
+                    {
+                        if (lockTaken == true)
+                        {
+                            List<ToSync> items = dbInstance.ToSync.ToList().Where(x => x.synchronizationItemId == item.id).ToList();
+                            foreach (ToSync itemToDelete in items)
+                                dbInstance.ToSync.Remove(itemToDelete);
+
+                            dbInstance.SaveChanges();
+
+                            _mutex.ReleaseMutex();
+                        }
+                    }
                 }
             }
         }
@@ -248,9 +230,9 @@ namespace My_Sync.Classes
         /// Adds a new history entry to the database
         /// </summary>
         /// <param name="newHistory">new entry to store in the database</param>
-        public static void AddItemToHistory(string name, string historyFlag, bool folderFlag, string serverDescription)
+        public static void AddItemToHistory(string name, string historyFlag, bool isFolder, string serverDescription)
         {
-            using (new Logger(name, historyFlag, folderFlag, serverDescription))
+            using (new Logger(name, historyFlag, isFolder, serverDescription))
             {
                 History newEntry = new History();
 
@@ -263,7 +245,7 @@ namespace My_Sync.Classes
 
                 newEntry.timestamp = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"); 
                 newEntry.entry = String.Format("{0} '{1}' {2} server '{3}'.", 
-                                               (folderFlag) ? "Folder" : "File", 
+                                               (isFolder) ? "Folder" : "File", 
                                                name, 
                                                historyEvent,
                                                serverDescription);
@@ -324,6 +306,37 @@ namespace My_Sync.Classes
                     History historyToDelete = dbInstance.History.Single(x => x.entry.Equals(entry));
                     dbInstance.History.Remove(historyToDelete);
                     dbInstance.SaveChanges();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes all history entries in the database except the last count of the given value
+        /// </summary>
+        /// <param name="count">deletes all entries except the last given ones</param>
+        public static void ShrinkHistoryEntries(int count = 100)
+        {
+            using (new Logger(count))
+            {
+                using (MySyncEntities dbInstance = new MySyncEntities())
+                {
+                    Mutex _mutex = new Mutex(false, "History");
+                    bool lockTaken = false;
+
+                    try { lockTaken = _mutex.WaitOne(); }
+                    finally
+                    {
+                        if (lockTaken == true)
+                        {
+                            List<History> entries = dbInstance.History.OrderBy(x => x.timestamp).ToList();
+                            for (int i = 0; i < entries.Count - count; i++)
+                                dbInstance.History.Remove(entries[i]);
+                            
+                            dbInstance.SaveChanges();
+
+                            _mutex.ReleaseMutex();
+                        }
+                    }
                 }
             }
         }
@@ -600,30 +613,30 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    bool exists = CheckExistsSynchronizationItem(newItem);
+                    Mutex _mutex = new Mutex(false, "SynchronizationItem");
+                    bool lockTaken = false;
+                    bool exists = false;
 
-                    if (!exists)
+                    try { lockTaken = _mutex.WaitOne(); }
+                    catch (AbandonedMutexException ex) { MessageBox.Show(ex.Message.ToString()); }
+                    finally
                     {
-                        Mutex _mutex = new Mutex(false, "SynchronizationItem");
-                        bool lockTaken = false;
-
-                        try { lockTaken = _mutex.WaitOne(); }
-                        finally
+                        if (lockTaken == true)
                         {
-                            if (lockTaken == true)
+                            exists = CheckExistsSynchronizationItem(newItem);
+
+                            if (!exists)
                             {
                                 newItem.id = DAL.GetNextSynchronizationItemId();
                                 dbInstance.SynchronizationItem.Add(newItem);
                                 dbInstance.SaveChanges();
-
-                                _mutex.ReleaseMutex();
                             }
-                        }
 
-                        return newItem.id;
+                            _mutex.ReleaseMutex();
+                        }
                     }
 
-                    return -1;
+                    return (exists) ? -1 : newItem.id;
                 }
             }
         }
@@ -659,7 +672,7 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    return dbInstance.SynchronizationItem.SingleOrDefault(x => x.fullname.Equals(fullname) && x.path.Equals(path));
+                    return dbInstance.SynchronizationItem.SingleOrDefault(x => x.fullname.Equals(fullname) && x.path.EndsWith(path));
                 }
             }
         }
@@ -724,7 +737,7 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    return dbInstance.SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.folderFlag) == false).ToList();
+                    return dbInstance.SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.isFolder) == false).ToList();
                 }
             }
         }
@@ -739,7 +752,7 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    return dbInstance.SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.folderFlag) == true).ToList();
+                    return dbInstance.SynchronizationItem.ToList().Where(x => Convert.ToBoolean(x.isFolder) == true).ToList();
                 }
             }
         }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserPreferences xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<ShowNotification>true</ShowNotification>
+	<AddToFavorites>false</AddToFavorites>
+	<FastSync>false</FastSync>
+	<UsedLanguage />
+	<MainFolder>MySync</MainFolder>
+	<SynchronizationInterval>15</SynchronizationInterval>
+	<LogPath></LogPath>
+	<LogState>true</LogState>
+</UserPreferences>

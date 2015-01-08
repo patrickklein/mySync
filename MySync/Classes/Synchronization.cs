@@ -18,33 +18,152 @@ namespace My_Sync.Classes
 {
     static class Synchronization
     {
-        //Task.Run(() => Synchronization.DownloadFile(null, null, null, null)).Wait();
-
-                    
         private static List<FileSystemWatcher> watcherList = new List<FileSystemWatcher>();
+        private static List<string> ignoreFromWatching = new List<string>();
         private static System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-        private static List<Tuple<char, SynchronizationItem>> syncItemList = new List<Tuple<char, SynchronizationItem>>();
         private static bool sync = false;
         private static string timeFormat = "yyyy/MM/dd HH:mm:ss";
 
+        #region Synchronization
+
         /// <summary>
-        /// Gets all ToSync items from the database and start to transfer the data/changes to the related server
+        /// Downloads/Updates/Deletes files/folders on the filesystem and the server
         /// </summary>
         private static void StartSynchronize()
         {
             using (new Logger())
             {
-                NotifyIcon.ChangeSyncState(false);
+                //NotifyIcon.ChangeSyncState(false);
                 //NotifyIcon.ChangeIcon("Upload");
+                MainWindow mainWindow = null;
+                System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Normal, (ThreadStart)delegate
+                {
+                    mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                });
 
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                //Check if items on the filesystem and the databases matches together
+                CheckForDifferencies();
+
+                foreach (SynchronizationPoint syncPoint in mainWindow.ServerDGSynchronizationPoints.Items)
+                {
+                    ServerEntryPoint point = DAL.GetServerEntryPoint(syncPoint.Description);
+                    List<SynchronizationItem> serverList = Synchronization.GetListFromServer(point.serverurl.Replace("/Upload", "/GetList"), point.id);
+
+                    //Download files from server, if something changed
+                    DownloadItemsFromServer(serverList, point);
+
+                    //Delete files/folders if they don't exist on the server anymore
+                    DeleteItemsOnClient(serverList, point);
+                }
+
+                //Send files/folders to the server, or deletes them
+                UploadItemsToServer();                              
+
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                ignoreFromWatching.Clear();
+                DAL.ShrinkHistoryEntries();
+                //NotifyIcon.ResetIcon();
+                //NotifyIcon.ChangeSyncState(true);
+                MemoryManagement.Reduce();
+
+                sync = false;
+            }
+        }
+
+        /// <summary>
+        /// Calls an item list from the server and compares it with the filesystem/database and downloads new/changed elements
+        /// </summary>
+        /// <param name="serverList">list of synchronization items on the server</param>
+        /// <param name="point">current server entry point</param>
+        /// <returns>list of conflicting synchronization items</returns>
+        private static List<SynchronizationItem> DownloadItemsFromServer(List<SynchronizationItem> serverList, ServerEntryPoint point)
+        {
+            using (new Logger(serverList, point))
+            {
+                List<SynchronizationItem> conflicted = new List<SynchronizationItem>();
+
+                foreach (SynchronizationItem serverItem in serverList)
+                {
+                    SynchronizationItem item = DAL.GetSynchronizationItem(serverItem.fullname, serverItem.path);
+                    if (item == null)
+                    {
+                        string itemPath = "";
+
+                        //Create new file or folder
+                        if (Convert.ToBoolean(serverItem.isFolder))
+                        {
+                            string path = Path.Combine(point.folderpath.Replace(point.folderpath.Split('\\').Last(), ""), serverItem.path, serverItem.fullname); ;
+
+                            ignoreFromWatching.Add(path);
+                            Directory.CreateDirectory(path);
+
+                            Directory.SetLastAccessTime(path, Convert.ToDateTime(serverItem.lastAccessTime));
+                            Directory.SetLastWriteTime(path, Convert.ToDateTime(serverItem.lastWriteTime));
+                            Directory.SetCreationTime(path, Convert.ToDateTime(serverItem.creationTime));
+
+                            itemPath = path;
+                        }
+                        else
+                        {
+                            string savingPath = Path.Combine(point.folderpath.Replace(point.folderpath.Split('\\').Last(), ""), serverItem.path);
+                            DownloadFile(point.serverurl.Replace("/Upload", "/Download"), false, serverItem.path, savingPath, serverItem.fullname);
+                            itemPath = Path.Combine(savingPath, serverItem.fullname);
+                        }
+
+                        //Add new file/folder to database
+                        ItemInfo newItem = new ItemInfo();
+                        newItem.GetInfo(itemPath);
+                        if (!newItem.IsFolder && GetFiltered(newItem.FullName)) continue;
+                        AddToDatabase(newItem, point.description);
+                    }
+                    else
+                    {
+                        bool isEqual = CheckSynchronizationItemIsEqual(item, serverItem);
+                        if (!isEqual && !Convert.ToBoolean(item.isFolder))
+                        {
+                            string conflictedFilename = "";
+
+                            //check if it is in ToSync table. if so there is a file conflict
+                            bool toSyncExists = DAL.ToSyncExists(item.id);
+                            if (toSyncExists)
+                            {
+                                conflictedFilename = string.Format("{0}.conflictedServer{1}", item.name, item.extension);
+                                conflicted.Add(item);
+                            }
+
+                            string syncRootToFolder = Path.Combine(point.folderpath.Split('\\').Last(), item.path.Replace(point.folderpath, "").Trim('\\'));
+                            DownloadFile(point.serverurl.Replace("/Upload", "/Download"), true, syncRootToFolder, item.path, item.fullname, conflictedFilename);
+                        }
+                    }
+                }
+
+                return conflicted;
+            }
+        }
+
+        /// <summary>
+        /// Gets all ToSync items from the database and start to transfer the data/changes to the related server
+        /// </summary>
+        private static void UploadItemsToServer()
+        {
+            using (new Logger())
+            {
                 while (true)
                 {
                     ToSync toSyncItem = DAL.GetNextToSync();
                     if (toSyncItem == null) break;
 
                     SynchronizationItem item = DAL.GetSynchronizationItem((long)toSyncItem.synchronizationItemId);
+                    if (item == null)
+                    {
+                        DAL.DeleteToSync(toSyncItem.id);
+                        continue;
+                    }
+
                     ServerEntryPoint entryPoint = DAL.GetServerEntryPoint((long)item.serverEntryPointId);
-                    FileInfo file = new FileInfo(Path.Combine(item.path, item.fullname));
 
                     try
                     {
@@ -53,9 +172,9 @@ namespace My_Sync.Classes
                             string folder = Path.Combine(entryPoint.folderpath.Split('\\').Last(), item.path.Replace(entryPoint.folderpath, "").Trim('\\'));
                             DeleteFromServer(entryPoint.serverurl.Replace("/Upload", "/Delete"), folder, item.fullname);
                         }
-                        else SendFileToServer(toSyncItem.syncType, file, entryPoint.serverurl, entryPoint.folderpath);
+                        else SendFileToServer(toSyncItem.syncType, item, entryPoint.serverurl, entryPoint.folderpath);
 
-                        DAL.AddItemToHistory(item.fullname, toSyncItem.syncType, Convert.ToBoolean(item.folderFlag), entryPoint.description);
+                        DAL.AddItemToHistory(item.fullname, toSyncItem.syncType, Convert.ToBoolean(item.isFolder), entryPoint.description);
                         DAL.DeleteToSync(toSyncItem.id);
 
                         if (toSyncItem.syncType == "d")
@@ -65,59 +184,54 @@ namespace My_Sync.Classes
                     }
                     catch (Exception ex)
                     {
-                        new Logger().Log(String.Format("{0}: {1}", file.FullName, ex.Message.ToString()));
+                        MessageBox.Show(ex.Message.ToString());
+                        new Logger().Log(String.Format("{0}: {1}", item.fullname, ex.Message.ToString()));
                         break;
                     }
                 }
-
-                sync = false;
-                //NotifyIcon.ResetIcon();
-                NotifyIcon.ChangeSyncState(true);
-                MemoryManagement.Reduce();
             }
         }
-
+        
         /// <summary>
-        /// Converts a given ItemInfo object into a SynchronizationItem
+        /// Delete files/folders if they don't exist on the server anymore
         /// </summary>
-        /// <param name="item">ItemInfo object</param>
-        /// <param name="newItem">SynchronizationItem object</param>
-        /// <returns>the converted SynchronizationItem object</returns>
-        private static SynchronizationItem ItemInfoToSyncItem(ItemInfo item, SynchronizationItem newItem)
+        /// <param name="serverList">list of synchronization items on the server</param>
+        /// <param name="point">current server entry point</param>
+        private static void DeleteItemsOnClient(List<SynchronizationItem> serverList, ServerEntryPoint point)
         {
-            using (new Logger(item, newItem))
+            using (new Logger(serverList, point))
             {
-                newItem.creationTime = item.CreationTime.ToString(timeFormat);
-                newItem.lastAccessTime = item.LastAccessTime.ToString(timeFormat);
-                newItem.lastWriteTime = item.LastWriteTime.ToString(timeFormat);
-                newItem.size = item.Size;
-                newItem.extension = item.Extension;
-                newItem.files = item.Files;
-                newItem.folders = item.Folders;
-                newItem.folderFlag = Convert.ToDecimal(item.FolderFlag);
-                newItem.name = (item.FolderFlag) ? item.Directory : item.Filename;
-                newItem.fullname = item.FullName;
-                newItem.path = item.FullPath.TrimEnd('\\');
-
-                return newItem;
-            }
-        }
-
-        /// <summary>
-        /// Refreshes the history entries on the GUI
-        /// </summary>
-        private static void RefreshHistoryEntries()
-        {
-            using (new Logger())
-            {
-                Application.Current.Dispatcher.Invoke(DispatcherPriority.Normal, (ThreadStart)delegate
+                List<SynchronizationItem> localItems = GetItemsFromFilesystem(point.folderpath, point.id);
+                
+                //Compare found files/folders attributes with the database
+                foreach (SynchronizationItem item in localItems)
                 {
-                    MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
-                    mainWindow.HistoryRTBHistory.Document.Blocks.Clear();
-                    mainWindow.HistoryRTBHistory.AppendText(DAL.GetHistory());
-                });
+                    int count = serverList.Where(x => x.fullname == item.fullname && item.path.EndsWith(x.path)).ToList().Count;
+                    if (count == 0)
+                    {
+                        //Check if action was on client or server
+                        SynchronizationItem dbItem = DAL.GetSynchronizationItem(item.fullname, item.path);
+                        if (DAL.ToSyncExists(dbItem.id)) continue;
+
+                        string pathWithName = Path.Combine(item.path, item.fullname);
+                        ignoreFromWatching.Add(pathWithName);
+
+                        if (Convert.ToBoolean(item.isFolder))
+                        {
+                            if(Directory.Exists(pathWithName)) Directory.Delete(pathWithName, true);
+                        }
+                        else
+                        {
+                            if(File.Exists(pathWithName)) File.Delete(pathWithName);
+                        }
+                    }
+                }
             }
         }
+
+        #endregion
+
+        #region Diff/Compare Synchronization Items
 
         /// <summary>
         /// Method for checking the filesystem and database for new/changed/deleted files and folders
@@ -136,51 +250,17 @@ namespace My_Sync.Classes
                 foreach (SynchronizationPoint syncPoint in mainWindow.ServerDGSynchronizationPoints.Items)
                 {
                     ServerEntryPoint point = DAL.GetServerEntryPoint(syncPoint.Description);
-                    FindFile fileCounter = new FindFile(point.folderpath, "*", true, true, true);
-                    fileCounter.RaiseOnAccessDenied = false;
 
                     //Get all files and folders from the watching directories
-                    List<SynchronizationItem> items = new List<SynchronizationItem>();
-                    fileCounter.FileFound +=
-                        (o, x) =>
-                        {
-                            SynchronizationItem info = new SynchronizationItem();
-                            info.extension = x.Extension;
-                            info.folderFlag = Convert.ToDecimal(x.IsDirectory);
-                            info.fullname = x.Name;
-                            info.name = x.Name;
-                            info.lastAccessTime = x.LastAccessTime.ToString(timeFormat);
-                            info.lastWriteTime = x.LastWriteTime.ToString(timeFormat);
-                            info.creationTime = x.CreationTime.ToString(timeFormat);
-                            info.size = x.Length;
-                            info.path = x.ParentPath.TrimEnd('\\');
-                            info.serverEntryPointId = point.id;
-
-                            //Fix bug for getting the correct file extension
-                            if(!x.IsDirectory) 
-                            {
-                                if (!String.IsNullOrEmpty(info.extension))
-                                    info.name = x.Name.Replace(x.Extension, "");
-                                else
-                                {
-                                    string[] split = x.Name.Split('.');
-                                    info.name = (split.Length > 1) ? x.Name.Replace("." + split.Last(), "") : x.Name;
-                                    info.extension = (split.Length > 1) ? "." + split.Last() : x.Extension;
-                                }
-                            }
-
-                            items.Add(info);
-                        };
-
-                    fileCounter.Find();
+                    List<SynchronizationItem> localItems = GetItemsFromFilesystem(point.folderpath, point.id);
 
                     //Get all files and folders from the database for the watching directory
                     List<SynchronizationItem> dbItems = DAL.GetSynchronizationItems(point.folderpath);
 
                     //Compare found files/folders attributes with the database
-                    foreach (SynchronizationItem item in items)
+                    foreach (SynchronizationItem item in localItems)
                     {
-                        if (GetFiltered(item.fullname)) continue;
+                        if (!Convert.ToBoolean(item.isFolder) && GetFiltered(item.fullname)) continue;
                         SynchronizationItem dbItem = dbItems.SingleOrDefault(x => x.serverEntryPointId == item.serverEntryPointId && x.fullname == item.fullname && x.path == item.path);
 
                         //Create item if not exists in the database
@@ -221,47 +301,29 @@ namespace My_Sync.Classes
         /// <summary>
         /// Checks if the given synchronization items are equal for the defined attributes
         /// </summary>
-        /// <param name="item1">first item</param>
-        /// <param name="item2">second item</param>
+        /// <param name="filesystemItem">first item from the file system</param>
+        /// <param name="compareItem">second item from database or server</param>
         /// <returns>value if equal or not</returns>
-        private static bool CheckSynchronizationItemIsEqual(SynchronizationItem item1, SynchronizationItem item2)
+        private static bool CheckSynchronizationItemIsEqual(SynchronizationItem filesystemItem, SynchronizationItem compareItem)
         {
-            using (new Logger(item1, item2))
+            using (new Logger(filesystemItem, compareItem))
             {
                 List<bool> equalCount = new List<bool>();
-                equalCount.Add(item1.creationTime == item2.creationTime);
-                equalCount.Add(item1.extension == item2.extension);
-                equalCount.Add(item1.folderFlag == item2.folderFlag);
-                equalCount.Add(item1.fullname == item2.fullname);
-                equalCount.Add(item1.lastAccessTime == item2.lastAccessTime);
-                equalCount.Add(item1.lastWriteTime == item2.lastWriteTime);
-                equalCount.Add(item1.path == item2.path);
-                equalCount.Add(item1.serverEntryPointId == item2.serverEntryPointId);
-                equalCount.Add(item1.size == item2.size);
+                equalCount.Add(filesystemItem.creationTime == compareItem.creationTime);
+                equalCount.Add(filesystemItem.extension == compareItem.extension);
+                equalCount.Add(filesystemItem.isFolder == compareItem.isFolder);
+                equalCount.Add(filesystemItem.fullname == compareItem.fullname);
+                equalCount.Add(filesystemItem.lastAccessTime == compareItem.lastAccessTime);
+                equalCount.Add(filesystemItem.lastWriteTime == compareItem.lastWriteTime);
+                equalCount.Add(filesystemItem.path.EndsWith(compareItem.path));
+                equalCount.Add(filesystemItem.serverEntryPointId == compareItem.serverEntryPointId);
+                equalCount.Add(filesystemItem.size == compareItem.size);
 
                 return !equalCount.Contains(false);
             }
         }
 
-        /// <summary>
-        /// Checks if the given name matches the defined file filter expressions
-        /// </summary>
-        /// <param name="name">file/folder name to check</param>
-        /// <returns>true/false if the name matches the filter or not</returns>
-        private static bool GetFiltered(string name)
-        {
-            using (new Logger(name))
-            {
-                List<bool> matchesCount = new List<bool>();
-                foreach (FileFilter filter in DAL.GetFileFilters())
-                {
-                    var pattern = Regex.Escape(filter.term).Replace(@"\*", ".+?").Replace(@"\?", ".");
-                    matchesCount.Add(Regex.IsMatch(name, pattern, RegexOptions.IgnoreCase));
-                }
-
-                return matchesCount.Contains(true);
-            }
-        }
+        #endregion
 
         #region Server Methods
 
@@ -269,22 +331,24 @@ namespace My_Sync.Classes
         /// Sends the given file/folder to the server address, provided from the related server entry point
         /// </summary>
         /// <param name="status">defines if the file was added (n), changed (u), or deleted (d)</param>
-        /// <param name="file2Sync">file/folder which should be send to the server</param>
+        /// <param name="item">file/folder which should be send to the server</param>
         /// <param name="requestUri">server address from the related server entry point</param>
         /// <param name="syncFolderPath">path from the related server entry point</param>
-        public static void SendFileToServer(string status, FileInfo file2Sync, string requestUri, string syncFolderPath)
+        private static void SendFileToServer(string status, SynchronizationItem item, string requestUri, string syncFolderPath)
         {
-            using (new Logger(status, file2Sync, requestUri))
+            using (new Logger(status, item, requestUri))
             {
                 using (var client = new HttpClient())
                 {
                     using (var content = new MultipartFormDataContent())
                     {
+                        FileInfo file2Sync = new FileInfo(Path.Combine(item.path, item.fullname));
+
                         ItemInfo info = new ItemInfo();
                         info.GetInfo(file2Sync.FullName);
 
                         //if the item is a file, load content to server
-                        if (info.FolderFlag == false)
+                        if (info.IsFolder == false)
                         {
                             string path = Path.Combine(info.Directory, info.FullName);
                             var fileContent = new ByteArrayContent(File.ReadAllBytes(path));
@@ -301,21 +365,35 @@ namespace My_Sync.Classes
                         content.Add(new StringContent(syncFolderPath.Split('\\').Last()), "syncRoot");
                         content.Add(new StringContent(info.FullPath), "fullPath");
                         content.Add(new StringContent(info.RootFolder), "rootFolder");
-                        content.Add(new StringContent(info.FolderFlag.ToString()), "folderFlag");
+                        content.Add(new StringContent(info.IsFolder.ToString()), "folderFlag");
                         content.Add(new StringContent(status.ToLower()), "status");
                         content.Add(new StringContent(info.Size.ToString()), "length");
-                        content.Add(new StringContent(info.CreationTime.ToString()), "creationTime");
-                        content.Add(new StringContent(info.LastWriteTime.ToString()), "lastWriteTime");
-                        content.Add(new StringContent(info.LastAccessTime.ToString()), "lastAccessTime");
+                        content.Add(new StringContent(info.CreationTime.ToString(timeFormat)), "creationTime");
+                        content.Add(new StringContent(info.LastWriteTime.ToString(timeFormat)), "lastWriteTime");
+                        content.Add(new StringContent(info.LastAccessTime.ToString(timeFormat)), "lastAccessTime");
                         content.Add(new StringContent(info.Directory), "directory");
                         content.Add(new StringContent(info.Extension), "extension");
-                        content.Add(new StringContent(info.Files.ToString()), "files");
-                        content.Add(new StringContent(info.Folders.ToString()), "folders");
                         content.Add(new StringContent(info.FullName), "fullName");
 
                         try
                         {
-                            var result = client.PostAsync(requestUri, content).Result;
+                            HttpResponseMessage responseMessage = client.PostAsync(requestUri, content).Result;
+                            
+                            string fileName = ((string[])responseMessage.Headers.GetValues("Filename"))[0];
+                            string path = ((string[])responseMessage.Headers.GetValues("Path"))[0];
+                            string lastSyncTime = ((string[])responseMessage.Headers.GetValues("LastSyncTime"))[0];
+                            string error = ((string[])responseMessage.Headers.GetValues("Error"))[0];
+
+                            if (String.IsNullOrEmpty(error))
+                            {
+                                item.lastSyncTime = lastSyncTime;
+                                DAL.UpdateSynchronizationItem(item);
+                            }
+                            else
+                            {
+                                MessageBox.Show("Send: " + fileName + " - " + error);
+                                throw new Exception(error);
+                            }
                         }
                         catch (Exception ex) { throw ex; }
                     }
@@ -342,7 +420,17 @@ namespace My_Sync.Classes
 
                         try
                         {
-                            var result = client.PostAsync(requestUri, content).Result;
+                            HttpResponseMessage responseMessage = client.PostAsync(requestUri, content).Result;
+
+                            string fileName = ((string[])responseMessage.Headers.GetValues("Filename"))[0];
+                            string path = ((string[])responseMessage.Headers.GetValues("Path"))[0];
+                            string error = ((string[])responseMessage.Headers.GetValues("Error"))[0];
+
+                            if (!String.IsNullOrEmpty(error))
+                            {
+                                MessageBox.Show("Delete: " + fileName + " - " + error);
+                                throw new Exception(error);
+                            }
                         }
                         catch (Exception ex) { throw ex; }
                     }
@@ -350,37 +438,109 @@ namespace My_Sync.Classes
             }
         }
 
-        public static async void DownloadFile(string requestUri, string rootFolder, string file, string savingPath)
+        /// <summary>
+        /// Gets a list of files/folders existing on the server
+        /// </summary>
+        /// <param name="requestUri">server address from the related server entry point</param>
+        /// <param name="serverEntryPointId">current id of the related server entry point</param>
+        /// <returns>list of retrieved files/folders from the server</returns>
+        private static List<SynchronizationItem> GetListFromServer(string requestUri, decimal serverEntryPointId)
         {
-            requestUri = "http://localhost:51992/Account/Download";
-            rootFolder = "FolderDelete";
-            file = "Neues Textdokument.txt";
-            savingPath = @"C:\temp\";
+            using (new Logger(requestUri, serverEntryPointId))
+            {
+                using (var client = new HttpClient())
+                {
+                    using (var content = new MultipartFormDataContent())
+                    {
+                        List<SynchronizationItem> list = new List<SynchronizationItem>();
 
-            using (new Logger(requestUri, rootFolder, file))
+                        try
+                        {
+                            HttpResponseMessage responseMessage = client.PostAsync(requestUri, content).Result;
+
+                            for (int i = 0; i >= 0; i++)
+                            {
+                                if (!responseMessage.Headers.Contains("Fullname" + i.ToString())) break;
+
+                                SynchronizationItem item = new SynchronizationItem();
+                                item.serverEntryPointId = serverEntryPointId;
+                                item.fullname = ((string[])responseMessage.Headers.GetValues("Fullname" + i.ToString()))[0];
+                                item.name = ((string[])responseMessage.Headers.GetValues("Name" + i.ToString()))[0];
+                                item.extension = ((string[])responseMessage.Headers.GetValues("Extension" + i.ToString()))[0];
+                                item.creationTime = ((string[])responseMessage.Headers.GetValues("CreationTime" + i.ToString()))[0];
+                                item.lastAccessTime = ((string[])responseMessage.Headers.GetValues("LastAccessTime" + i.ToString()))[0];
+                                item.lastWriteTime = ((string[])responseMessage.Headers.GetValues("LastWriteTime" + i.ToString()))[0];
+                                item.lastSyncTime = ((string[])responseMessage.Headers.GetValues("LastSyncTime" + i.ToString()))[0];
+                                item.path = ((string[])responseMessage.Headers.GetValues("Path" + i.ToString()))[0];
+                                item.size = Convert.ToDecimal(((string[])responseMessage.Headers.GetValues("Size" + i.ToString()))[0]);
+                                item.isFolder = Convert.ToDecimal(((string[])responseMessage.Headers.GetValues("IsFolder" + i.ToString()))[0]);
+                                list.Add(item);
+                            }
+                        }
+                        catch (Exception ex) { throw ex; }
+
+                        return list;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Downloads the given file from the server (address provided from the related server entry point)
+        /// </summary>
+        /// <param name="requestUri">server address from the related server entry point</param>
+        /// <param name="ignore">defines if the file should be ignored by the filewatchers</param>
+        /// <param name="rootFolder">folder from the server entry point to the file/folder</param>
+        /// <param name="savingPath">saving path for the new file</param>
+        /// <param name="fullName">filename to download from server</param>
+        /// <param name="conflictedFilename">filename to rename the file is it conflicts</param>
+        private static async void DownloadFile(string requestUri, bool ignore, string rootFolder, string savingPath, string fullName, string conflictedFilename = "")
+        {
+            using (new Logger(requestUri, ignore, rootFolder, savingPath, fullName, conflictedFilename))
             {
                 using (var client = new HttpClient())
                 {
                     using (var content = new MultipartFormDataContent())
                     {
                         content.Add(new StringContent(rootFolder), "directory");
-                        content.Add(new StringContent(file), "fullName");
+                        content.Add(new StringContent(fullName), "fullName");
 
                         try
                         {
                             HttpResponseMessage responseMessage = client.PostAsync(requestUri, content).Result;
-                            string fileName = ((string[])responseMessage.Headers.GetValues("Filename"))[0];
-                            var temp = ((string[])responseMessage.Headers.GetValues("Path"))[0];
+                            string fileName = (String.IsNullOrEmpty(conflictedFilename)) ? ((string[])responseMessage.Headers.GetValues("Fullname"))[0] : conflictedFilename;
+                            string fileNameTmp = fileName + ".tmp";
+                            string fileWithPath = Path.Combine(savingPath, fileName);
+                            bool isFolder = Convert.ToBoolean(((string[])responseMessage.Headers.GetValues("IsFolder"))[0]);
 
-                            if (!Directory.Exists(savingPath)) Directory.CreateDirectory(savingPath);
-                            using (var fileStream = File.Create(Path.Combine(savingPath + fileName)))
+                            ignoreFromWatching.Add(Path.Combine(savingPath, fileName));
+                            ignoreFromWatching.Add(Path.Combine(savingPath, fileNameTmp));
+
+                            if (isFolder)
                             {
-                                using (var httpStream = await responseMessage.Content.ReadAsStreamAsync())
-                                {
-                                    httpStream.CopyTo(fileStream);
-                                    fileStream.Flush();
-                                }
+                                if (!Directory.Exists(savingPath)) Directory.CreateDirectory(fileWithPath);
                             }
+                            else
+                            {
+
+                                if (!Directory.Exists(savingPath)) Directory.CreateDirectory(savingPath);
+                                using (var fileStream = File.Create(Path.Combine(savingPath, fileNameTmp)))
+                                {
+                                    using (var httpStream = await responseMessage.Content.ReadAsStreamAsync())
+                                    {
+                                        httpStream.CopyTo(fileStream);
+                                        fileStream.Flush();
+                                    }
+                                }
+
+                                //delete old file and rename the temp file to his original name
+                                File.Delete(fileWithPath);
+                                File.Move(Path.Combine(savingPath, fileNameTmp), Path.Combine(savingPath, fileName));
+                            }
+
+                            Directory.SetLastAccessTime(fileWithPath, Convert.ToDateTime(((string[])responseMessage.Headers.GetValues("LastAccessTime"))[0]));
+                            Directory.SetLastWriteTime(fileWithPath, Convert.ToDateTime(((string[])responseMessage.Headers.GetValues("LastWriteTime"))[0]));
+                            Directory.SetCreationTime(fileWithPath, Convert.ToDateTime(((string[])responseMessage.Headers.GetValues("CreationTime"))[0]));
                         }
                         catch (Exception ex) { throw ex; }
                     }
@@ -508,33 +668,26 @@ namespace My_Sync.Classes
         /// <summary>
         /// Updates a synchronisation item in the database
         /// </summary>
+        /// <param name="toUpdate">Synchronization item to update</param>
         /// <param name="path">full path of file/folder</param>
-        /// <param name="oldName">old name of file/folder</param>
-        /// <param name="newName">new name of file/folder (if empty it gets the value from oldName)</param>
         /// <returns>item which was updated in the database</returns>
-        private static SynchronizationItem DBUpdateSynchronizationItem(string path, string oldName, string newName = "")
+        private static SynchronizationItem DBUpdateSynchronizationItem(SynchronizationItem toUpdate, string path)
         {
-            using (new Logger(path, oldName, newName))
+            using (new Logger(toUpdate, path))
             {
-                if (String.IsNullOrEmpty(newName)) newName = oldName;
-                string parentPath = path.TrimEnd(path.Split('\\').Last().ToCharArray()).TrimEnd('\\');
-                oldName = (oldName.Contains('\\')) ? oldName.Split('\\').Last() : oldName;
-                newName = (newName.Contains('\\')) ? newName.Split('\\').Last() : newName;
-
-                SynchronizationItem toRename = DAL.GetSynchronizationItem(oldName, parentPath);
                 ItemInfo item = new ItemInfo();
                 item.GetInfo(path);
-                toRename = ItemInfoToSyncItem(item, toRename);
+                toUpdate = ItemInfoToSyncItem(item, toUpdate);
 
                 ToSync sync = new ToSync();
                 sync.syncType = "u";
-                sync.synchronizationItemId = toRename.id;
+                sync.synchronizationItemId = toUpdate.id;
 
                 //make changes in the database
-                DAL.UpdateSynchronizationItem(toRename);
+                DAL.UpdateSynchronizationItem(toUpdate);
                 DAL.AddToSync(sync);
 
-                return toRename;
+                return toUpdate;
             }
         }
 
@@ -574,7 +727,7 @@ namespace My_Sync.Classes
                 //if it was a folder, delete all contained files/folder 
                 if (toDelete != null)
                 {
-                    if (Convert.ToBoolean(toDelete.folderFlag))
+                    if (Convert.ToBoolean(toDelete.isFolder))
                     {
                         string fullPath = Path.Combine(toDelete.path, toDelete.fullname);
                         List<SynchronizationItem> items = DAL.GetSynchronizationItems(fullPath);
@@ -604,6 +757,9 @@ namespace My_Sync.Classes
                 //if it was a folder, delete all contained files/folder 
                 if (toDelete != null)
                 {
+                    //delete all entries with the same synchronizationItemId
+                    DAL.DeleteToSyncBySynchronizationItem(toDelete);
+
                     ToSync sync = new ToSync();
                     sync.syncType = "d";
                     sync.synchronizationItemId = toDelete.id;
@@ -633,7 +789,6 @@ namespace My_Sync.Classes
                     fsw.IncludeSubdirectories = true;
                     fsw.Created += fsw_Created;
                     fsw.Changed += fsw_Changed;
-                    fsw.Renamed += fsw_Renamed;
                     fsw.Deleted += fsw_Deleted;
 
                     watcherList.Add(fsw);
@@ -668,28 +823,6 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
-        /// Eventhandler gets fired if a file or directory has been renamed
-        /// </summary>
-        /// <param name="objectRenamed">event sender</param>
-        /// <param name="e">event arguments</param>
-        private static void fsw_Renamed(object objectRenamed, RenamedEventArgs e)
-        {
-            using (new Logger(objectRenamed, e))
-            {
-                //Delay is given to the thread for avoiding same process to be repeated
-                Thread.Sleep(250);
-
-                if (GetFiltered(e.Name)) return;
-                DBUpdateSynchronizationItem(e.FullPath, e.OldName, e.Name);
-
-                //if fastsync is active
-                if (MySync.Default.fastSync) StartSynchronization();
-
-                MemoryManagement.Reduce();
-            }
-        }
-
-        /// <summary>
         /// Eventhandler gets fired if a file or directory has been deleted
         /// </summary>
         /// <param name="objectDeleted">event sender</param>
@@ -703,10 +836,13 @@ namespace My_Sync.Classes
                 
                 string name = e.FullPath.Split('\\').Last();
                 string path = e.FullPath.Replace(name, "").TrimEnd('\\');
+
+                //Write it into database
+                if (ignoreFromWatching.Contains(Path.Combine(path, name))) return;
                 DBAddDeletion(name, path);
 
                 //if fastsync is active
-                if (MySync.Default.fastSync) StartSynchronization();
+                if (UserPreferences.fastSync) StartSynchronization();
 
                 MemoryManagement.Reduce();
             }
@@ -724,11 +860,21 @@ namespace My_Sync.Classes
                 //Delay is given to the thread for avoiding same process to be repeated
                 Thread.Sleep(250);
 
-                if (GetFiltered(e.Name)) return;
-                DBUpdateSynchronizationItem(e.FullPath, e.Name);
+                string parentPath = e.FullPath.TrimEnd(e.FullPath.Split('\\').Last().ToCharArray()).TrimEnd('\\');
+                string name = (e.Name.Contains('\\')) ? e.Name.Split('\\').Last() : e.Name;
+
+                if (ignoreFromWatching.Contains(Path.Combine(parentPath, name))) return;
+
+                //Write it into database
+                SynchronizationItem toUpdate = DAL.GetSynchronizationItem(name, parentPath);
+                if (toUpdate != null)
+                {
+                    if (!Convert.ToBoolean(toUpdate.isFolder) && GetFiltered(e.Name)) return;
+                    DBUpdateSynchronizationItem(toUpdate, e.FullPath);
+                }                
 
                 //if fastsync is active
-                if (MySync.Default.fastSync) StartSynchronization();
+                if (UserPreferences.fastSync) StartSynchronization();
 
                 MemoryManagement.Reduce();
             }
@@ -746,20 +892,143 @@ namespace My_Sync.Classes
                 //Delay is given to the thread for avoiding same process to be repeated
                 Thread.Sleep(250);
 
+                if (ignoreFromWatching.Contains(e.FullPath)) return;
+
                 ItemInfo newItem = new ItemInfo();
                 newItem.GetInfo(e.FullPath);
 
-                if (GetFiltered(newItem.FullName)) return;
+                if (!newItem.IsFolder && GetFiltered(newItem.FullName)) return;
+
+                //Write it into database
                 string description = DAL.GetServerEntryPointByPath(((FileSystemWatcher)objectCreated).Path).description;
                 AddToDatabase(newItem, description);
 
                 //if fastsync is active
-                if (MySync.Default.fastSync) StartSynchronization();
+                if (UserPreferences.fastSync) StartSynchronization();
 
                 MemoryManagement.Reduce();
             }
         }
 
         #endregion
+
+        /// <summary>
+        /// Searches all existing files and folders on the filesystem for the given path
+        /// </summary>
+        /// <param name="path">lookup path</param>
+        /// <param name="serverEntryPointId">id of the related server entry point</param>
+        /// <returns></returns>
+        private static List<SynchronizationItem> GetItemsFromFilesystem(string path, decimal serverEntryPointId)
+        {
+            using (new Logger(path, serverEntryPointId))
+            {
+                List<SynchronizationItem> items = new List<SynchronizationItem>();
+                FindFile fileCounter = new FindFile(path, "*", true, true, true);
+                fileCounter.RaiseOnAccessDenied = false;
+
+                fileCounter.FileFound +=
+                    (o, x) =>
+                    {
+                        SynchronizationItem info = new SynchronizationItem();
+                        info.extension = x.Extension;
+                        info.isFolder = Convert.ToDecimal(x.IsDirectory);
+                        info.fullname = x.Name;
+                        info.name = x.Name;
+                        info.size = x.Length;
+                        info.lastAccessTime = x.LastAccessTime.ToString(timeFormat);
+                        info.lastWriteTime = x.LastWriteTime.ToString(timeFormat);
+                        info.creationTime = x.CreationTime.ToString(timeFormat);
+                        info.path = x.ParentPath.TrimEnd('\\');
+                        info.serverEntryPointId = serverEntryPointId;
+
+                        //Fixing bug for getting the correct file extension
+                        if (!x.IsDirectory)
+                        {
+                            if (!String.IsNullOrEmpty(info.extension))
+                                info.name = x.Name.Replace(x.Extension, "");
+                            else
+                            {
+                                string[] split = x.Name.Split('.');
+                                info.name = (split.Length > 1) ? x.Name.Replace("." + split.Last(), "") : x.Name;
+                                info.extension = (split.Length > 1) ? "." + split.Last() : x.Extension;
+                            }
+                        }
+
+                        //Fixing bug for getting the correct size of an folder
+                        if (x.IsDirectory)
+                        {
+                            long size = new DirectoryInfo(x.FullPath).GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
+                            info.size = size;
+                        }
+
+                        items.Add(info);
+                    };
+
+                fileCounter.Find();
+
+                return items;
+            }
+        }
+
+        /// <summary>
+        /// Converts a given ItemInfo object into a SynchronizationItem
+        /// </summary>
+        /// <param name="item">ItemInfo object</param>
+        /// <param name="newItem">SynchronizationItem object</param>
+        /// <returns>the converted SynchronizationItem object</returns>
+        private static SynchronizationItem ItemInfoToSyncItem(ItemInfo item, SynchronizationItem newItem)
+        {
+            using (new Logger(item, newItem))
+            {
+                newItem.creationTime = item.CreationTime.ToString(timeFormat);
+                newItem.lastAccessTime = item.LastAccessTime.ToString(timeFormat);
+                newItem.lastWriteTime = item.LastWriteTime.ToString(timeFormat);
+                newItem.size = item.Size;
+                newItem.extension = item.Extension;
+                newItem.isFolder = Convert.ToDecimal(item.IsFolder);
+                newItem.name = (item.IsFolder) ? item.Directory : item.Filename;
+                newItem.fullname = item.FullName;
+                newItem.lastFullname = item.LastFullName;
+                newItem.path = item.FullPath.TrimEnd('\\');
+
+                return newItem;
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the history entries on the GUI
+        /// </summary>
+        private static void RefreshHistoryEntries()
+        {
+            using (new Logger())
+            {
+                Application.Current.Dispatcher.Invoke(DispatcherPriority.Normal, (ThreadStart)delegate
+                {
+                    MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                    mainWindow.HistoryRTBHistory.Document.Blocks.Clear();
+                    mainWindow.HistoryRTBHistory.AppendText(DAL.GetHistory());
+                });
+            }
+        }
+
+        /// <summary>
+        /// Checks if the given name matches the defined file filter expressions
+        /// </summary>
+        /// <param name="name">file/folder name to check</param>
+        /// <returns>true/false if the name matches the filter or not</returns>
+        private static bool GetFiltered(string name)
+        {
+            using (new Logger(name))
+            {
+                List<bool> matchesCount = new List<bool>();
+                foreach (FileFilter filter in DAL.GetFileFilters())
+                {
+                    var pattern = Regex.Escape(filter.term).Replace(@"\*", ".+?").Replace(@"\?", ".");
+                    matchesCount.Add(Regex.IsMatch(name, pattern, RegexOptions.IgnoreCase));
+                }
+
+                return matchesCount.Contains(true);
+            }
+        }
     }
 }

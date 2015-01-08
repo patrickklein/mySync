@@ -49,7 +49,7 @@ namespace My_Sync.Classes
         /// <returns>favorite folder path</returns>
         public static string GetFavoriteFolder()
         {
-            folderName = MySync.Default.mainFolder;
+            folderName = UserPreferences.mainFolder;
             favoriteFolder = Environment.ExpandEnvironmentVariables(Path.Combine(@"%USERPROFILE%", folderName));
             return favoriteFolder;
         }
@@ -62,7 +62,7 @@ namespace My_Sync.Classes
         {
             using (new Logger())
             {
-                folderName = MySync.Default.mainFolder;
+                folderName = UserPreferences.mainFolder;
                 if (String.IsNullOrEmpty(favoriteFolder)) GetFavoriteFolder();
 
                 Directory.CreateDirectory(favoriteFolder);
@@ -83,7 +83,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(recursive))
             {
-                folderName = MySync.Default.mainFolder;
+                folderName = UserPreferences.mainFolder;
                 favoriteFolder = Environment.ExpandEnvironmentVariables(Path.Combine(@"%USERPROFILE%", folderName));
 
                 //Set directory attributes to normal to grant deletion rights
@@ -201,7 +201,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(shortcutName))
             {
-                folderName = MySync.Default.mainFolder;
+                folderName = UserPreferences.mainFolder;
                 shortcutName = (String.IsNullOrEmpty(shortcutName)) ? folderName : shortcutName;
                 string linksPath = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\Links");
                 string shortcutLocation = Path.Combine(linksPath, shortcutName + ".lnk");
@@ -216,6 +216,7 @@ namespace My_Sync.Classes
     {
         private string filename;
         private string fullName;
+        private string lastFullName;
         private string directory;
         private string extension;
         private string fullPath;
@@ -224,9 +225,7 @@ namespace My_Sync.Classes
         private DateTime lastAccessTime;
         private DateTime lastWriteTime;
         private long size;
-        private long files;
-        private long folders;
-        private bool folderFlag = false;
+        private bool isFolder = false;
 
         #region Getter / Setter
 
@@ -240,6 +239,12 @@ namespace My_Sync.Classes
         {
             get { return fullName; }
             set { fullName = value; }
+        }
+
+        public string LastFullName
+        {
+            get { return lastFullName; }
+            set { lastFullName = value; }
         }
 
         public string Directory
@@ -290,22 +295,10 @@ namespace My_Sync.Classes
             set { size = value; }
         }
 
-        public long Files
+        public bool IsFolder
         {
-            get { return files; }
-            set { files = value; }
-        }
-
-        public long Folders
-        {
-            get { return folders; }
-            set { folders = value; }
-        }
-
-        public bool FolderFlag
-        {
-            get { return folderFlag; }
-            set { folderFlag = value; }
+            get { return isFolder; }
+            set { isFolder = value; }
         }
 
         #endregion
@@ -328,7 +321,7 @@ namespace My_Sync.Classes
                     if (new FileInfo(fullName).Exists)
                     {
                         info = new FileInfo(fullName);
-                        this.FolderFlag = false;
+                        this.IsFolder = false;
                         this.Size = ((FileInfo)info).Length;
                         this.Directory = ((FileInfo)info).DirectoryName;
                         this.Extension = info.Extension;
@@ -344,7 +337,7 @@ namespace My_Sync.Classes
                         info = new DirectoryInfo(fullName);
                         int lastindex = info.FullName.TrimEnd('\\').LastIndexOf('\\');
                         this.FullPath = info.FullName.Substring(0, lastindex);
-                        this.FolderFlag = true;
+                        this.IsFolder = true;
                         this.Size = ((DirectoryInfo)info).GetFiles("*.*", SearchOption.AllDirectories).Sum(file => file.Length);
                         this.Directory = info.Name;
                         this.Extension = "";

@@ -15,7 +15,7 @@ namespace My_Sync
     public partial class History
     {
         public long id { get; set; }
-        public string entry { get; set; }
         public string timestamp { get; set; }
+        public string entry { get; set; }
     }
 }

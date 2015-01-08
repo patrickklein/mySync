@@ -23,14 +23,14 @@ namespace My_Sync.Classes
         /// </summary>
         private void Initialize()
         {
-            string path = (MySync.Default.logPath != "") ? MySync.Default.logPath : ".\\";
+            string path = (UserPreferences.logPath != "") ? UserPreferences.logPath : ".\\";
             try
             {
                 Directory.CreateDirectory(path);
             }
             catch (DirectoryNotFoundException)
             {
-                MessageBox.Show("Defined log path not found. Please correct them.");
+                MessageBox.Show("Defined log path not found. Please correct it.");
             }
 
             string fullPath = Path.Combine(path, "Log.txt");
@@ -43,7 +43,7 @@ namespace My_Sync.Classes
         /// <param name="args">parameters of the called method/function</param>
         public Logger(params object [] args)
         {
-            if (!MySync.Default.logState) return;
+            if (!UserPreferences.logState) return;
             if (file == null) Initialize();
 
             this.className = new StackTrace().GetFrame(1).GetMethod().DeclaringType.Name;
@@ -65,7 +65,7 @@ namespace My_Sync.Classes
         /// </summary>
         public void Dispose()
         {
-            if (!MySync.Default.logState) return;
+            if (!UserPreferences.logState) return;
             string message = String.Format("<-- '{0}.{1}'", this.className.Trim(), this.methodName.Trim());
             Log(message);
         }

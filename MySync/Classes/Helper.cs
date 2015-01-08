@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,16 +17,48 @@ namespace My_Sync.Classes
     static class Helper
     {
         /// <summary>
-        /// Method for saving property values to user settings
+        /// Method for extract files from the embedded resources of this application
         /// </summary>
-        /// <param name="property">settings property which should get the new value</param>
-        /// <param name="value">value which should be set</param>
-        public static void SaveSetting(string property, object value)
+        /// <param name="extension">files to extract</param>
+        public static void ExtractEmbeddedResource(string extension)
         {
-            using (new Logger(property, value))
+            using (new Logger(extension))
             {
-                MySync.Default.GetType().GetProperty(property).SetValue(MySync.Default, value);
-                MySync.Default.Save();
+                //Get current assembly reference and all embedded resources
+                Assembly currentAssembly = Assembly.GetExecutingAssembly();
+                string[] arrResources = currentAssembly.GetManifestResourceNames();
+
+                foreach (string resourceName in arrResources)
+                {
+                    if (resourceName.EndsWith(extension))
+                    {
+                        //Name of the file saved on disk
+                        MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                        string saveAsName = resourceName.Replace(mainWindow.GetType().Namespace, "").TrimStart('.').Replace("Resources.", "");
+                        string executablePath = Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath);
+
+                        FileInfo fileInfoOutputFile = new FileInfo(Path.Combine(executablePath, saveAsName));
+
+                        if (fileInfoOutputFile.Exists) continue;
+
+                        foreach (Process proc in Process.GetProcessesByName(fileInfoOutputFile.Name.Replace(".exe", "")))
+                            proc.Kill();
+
+                        //open newly creating file for writing and get the stream to the resources
+                        FileStream streamToOutputFile = fileInfoOutputFile.OpenWrite();
+                        Stream streamToResourceFile = currentAssembly.GetManifestResourceStream(resourceName);
+
+                        //save resource to folder
+                        const int size = 4096;
+                        byte[] bytes = new byte[4096];
+                        int numBytes;
+                        while ((numBytes = streamToResourceFile.Read(bytes, 0, size)) > 0)
+                            streamToOutputFile.Write(bytes, 0, numBytes);
+
+                        streamToOutputFile.Close();
+                        streamToResourceFile.Close();
+                    }
+                }
             }
         }
 

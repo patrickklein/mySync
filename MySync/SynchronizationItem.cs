@@ -15,20 +15,17 @@ namespace My_Sync
     public partial class SynchronizationItem
     {
         public long id { get; set; }
-        public Nullable<long> serverEntryPointId { get; set; }
+        public Nullable<decimal> serverEntryPointId { get; set; }
         public string name { get; set; }
-        public string fullname { get; set; }
         public string extension { get; set; }
+        public string fullname { get; set; }
+        public string lastFullname { get; set; }
+        public Nullable<decimal> size { get; set; }
         public string creationTime { get; set; }
         public string lastAccessTime { get; set; }
         public string lastWriteTime { get; set; }
         public string lastSyncTime { get; set; }
-        public Nullable<decimal> size { get; set; }
-        public Nullable<decimal> folderFlag { get; set; }
-        public Nullable<decimal> hiddenFlag { get; set; }
-        public Nullable<decimal> systemFlag { get; set; }
-        public Nullable<decimal> files { get; set; }
-        public Nullable<decimal> folders { get; set; }
+        public Nullable<decimal> isFolder { get; set; }
         public string path { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace My_Sync
     public partial class ToSync
     {
         public long id { get; set; }
-        public Nullable<long> synchronizationItemId { get; set; }
+        public Nullable<decimal> synchronizationItemId { get; set; }
         public string syncType { get; set; }
     }
 }

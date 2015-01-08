@@ -24,8 +24,8 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="integer" Nullable="false" />
-          <Property Name="entry" Type="nvarchar" />
           <Property Name="timestamp" Type="nvarchar" />
+          <Property Name="entry" Type="nvarchar" />
         </EntityType>
         <EntityType Name="ServerEntryPoint">
           <Key>
@@ -41,30 +41,27 @@
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="fullname" Type="nvarchar" />
           <Property Name="id" Type="integer" Nullable="false" />
           <Property Name="serverEntryPointId" Type="decimal" Precision="53" />
           <Property Name="name" Type="nvarchar" />
           <Property Name="extension" Type="nvarchar" />
+          <Property Name="fullname" Type="nvarchar" />
+          <Property Name="lastFullname" Type="nvarchar" />
+          <Property Name="size" Type="decimal" Precision="53" />
           <Property Name="creationTime" Type="nvarchar" />
           <Property Name="lastAccessTime" Type="nvarchar" />
           <Property Name="lastWriteTime" Type="nvarchar" />
           <Property Name="lastSyncTime" Type="nvarchar" />
-          <Property Name="size" Type="decimal" Precision="53" />
-          <Property Name="folderFlag" Type="decimal" Precision="53" />
-          <Property Name="hiddenFlag" Type="decimal" Precision="53" />
-          <Property Name="systemFlag" Type="decimal" Precision="53" />
-          <Property Name="files" Type="decimal" Precision="53" />
-          <Property Name="folders" Type="decimal" Precision="53" />
+          <Property Name="isFolder" Type="decimal" Precision="53" />
           <Property Name="path" Type="nvarchar" />
         </EntityType>
         <EntityType Name="ToSync">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="syncType" Type="nvarchar" />
           <Property Name="id" Type="integer" Nullable="false" />
           <Property Name="synchronizationItemId" Type="decimal" Precision="53" />
+          <Property Name="syncType" Type="nvarchar" />
         </EntityType>
       </Schema>
     </edmx:StorageModels>
@@ -90,8 +87,8 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
-          <Property Name="entry" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="timestamp" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="entry" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
         <EntityType Name="ServerEntryPoint">
           <Key>
@@ -108,20 +105,17 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
-          <Property Name="serverEntryPointId" Type="Int64" />
+          <Property Name="serverEntryPointId" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="name" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
-          <Property Name="fullname" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="extension" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="fullname" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="lastFullname" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="size" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="creationTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="lastAccessTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="lastWriteTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
           <Property Name="lastSyncTime" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
-          <Property Name="size" Type="Decimal" Precision="53" Scale="0" />
-          <Property Name="folderFlag" Type="Decimal" Precision="53" Scale="0" />
-          <Property Name="hiddenFlag" Type="Decimal" Precision="53" Scale="0" />
-          <Property Name="systemFlag" Type="Decimal" Precision="53" Scale="0" />
-          <Property Name="files" Type="Decimal" Precision="53" Scale="0" />
-          <Property Name="folders" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="isFolder" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="path" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
         <EntityType Name="ToSync">
@@ -129,7 +123,7 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
-          <Property Name="synchronizationItemId" Type="Int64" />
+          <Property Name="synchronizationItemId" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="syncType" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
       </Schema>
@@ -150,8 +144,8 @@
             <EntityTypeMapping TypeName="MySyncModel.History">
               <MappingFragment StoreEntitySet="History">
                 <ScalarProperty Name="id" ColumnName="id" />
-                <ScalarProperty Name="entry" ColumnName="entry" />
                 <ScalarProperty Name="timestamp" ColumnName="timestamp" />
+                <ScalarProperty Name="entry" ColumnName="entry" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
@@ -169,21 +163,18 @@
           <EntitySetMapping Name="SynchronizationItem">
             <EntityTypeMapping TypeName="MySyncModel.SynchronizationItem">
               <MappingFragment StoreEntitySet="SynchronizationItem">
-                <ScalarProperty Name="fullname" ColumnName="fullname" />
                 <ScalarProperty Name="id" ColumnName="id" />
                 <ScalarProperty Name="serverEntryPointId" ColumnName="serverEntryPointId" />
                 <ScalarProperty Name="name" ColumnName="name" />
                 <ScalarProperty Name="extension" ColumnName="extension" />
+                <ScalarProperty Name="fullname" ColumnName="fullname" />
+                <ScalarProperty Name="lastFullname" ColumnName="lastFullname" />
+                <ScalarProperty Name="size" ColumnName="size" />
                 <ScalarProperty Name="creationTime" ColumnName="creationTime" />
                 <ScalarProperty Name="lastAccessTime" ColumnName="lastAccessTime" />
                 <ScalarProperty Name="lastWriteTime" ColumnName="lastWriteTime" />
                 <ScalarProperty Name="lastSyncTime" ColumnName="lastSyncTime" />
-                <ScalarProperty Name="size" ColumnName="size" />
-                <ScalarProperty Name="folderFlag" ColumnName="folderFlag" />
-                <ScalarProperty Name="hiddenFlag" ColumnName="hiddenFlag" />
-                <ScalarProperty Name="systemFlag" ColumnName="systemFlag" />
-                <ScalarProperty Name="files" ColumnName="files" />
-                <ScalarProperty Name="folders" ColumnName="folders" />
+                <ScalarProperty Name="isFolder" ColumnName="isFolder" />
                 <ScalarProperty Name="path" ColumnName="path" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -191,9 +182,9 @@
           <EntitySetMapping Name="ToSync">
             <EntityTypeMapping TypeName="MySyncModel.ToSync">
               <MappingFragment StoreEntitySet="ToSync">
-                <ScalarProperty Name="syncType" ColumnName="syncType" />
                 <ScalarProperty Name="id" ColumnName="id" />
                 <ScalarProperty Name="synchronizationItemId" ColumnName="synchronizationItemId" />
+                <ScalarProperty Name="syncType" ColumnName="syncType" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

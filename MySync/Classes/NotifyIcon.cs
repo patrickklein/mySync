@@ -79,6 +79,7 @@ namespace My_Sync.Classes
         {
             using (new Logger(visible))
             {
+                if (notifyIcon == null) return;
                 notifyIcon.Visible = visible;
             }
         }
@@ -106,6 +107,10 @@ namespace My_Sync.Classes
             }
         }
 
+        /// <summary>
+        /// Enables/Disables the start synchronization menuentry of the notification icon
+        /// </summary>
+        /// <param name="state">true/false if is should get enabled or not</param>
         public static void ChangeSyncState(bool state)
         {
             using (new Logger(state))

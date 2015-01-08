@@ -2,7 +2,9 @@
 using My_Sync.Classes;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -31,26 +33,44 @@ namespace My_Sync
     public partial class MainWindow : Window
     {
         public string applicationName = "MySync";
-        public MySyncEntities dbInstance = new MySyncEntities();
 
         public MainWindow()
         {
-            using (new Logger())
+            try
             {
-                try
-                {
-                    InitializeComponent();
-                    InitializeObjects();
-                    InitializePopup();
+                InitializeComponent();
+                InitializeConfiguration();
+                InitializeObjects();
+                InitializePopup();
 
-                    Synchronization.StartTimer();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.ToString());
-                }
-                //CheckInternetConnection.IsConnected
+                Synchronization.StartTimer();
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            //CheckInternetConnection.IsConnected
+        }
+
+        /// <summary>
+        /// Extracts the user configuration file if not exists and loads all the saved settings
+        /// </summary>
+        private void InitializeConfiguration()
+        {
+            //Kill existing instances to invoid access restrictions/errors
+            int id = Process.GetCurrentProcess().Id;
+            foreach (Process instance in Process.GetProcessesByName(AppDomain.CurrentDomain.FriendlyName.Replace(".exe", "")))
+            {
+                if (instance.Id == id) continue;
+                instance.Kill();
+            }
+
+            //Extract the user configuration file
+            string file = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "configuration.xml");
+            if (!File.Exists(file)) Helper.ExtractEmbeddedResource(".xml");
+
+            //load settings
+            UserPreferences.Load();
         }
 
         /// <summary>
@@ -61,18 +81,35 @@ namespace My_Sync
         {
             using (new Logger(reinitialization))
             {
-                //Set user language, create database and name all elements
-                SetLanguageDictionary(MySync.Default.usedLanguage);
-                DAL.CreateDatabase();
+                //Set user language from configuration
+                SetLanguageDictionary(UserPreferences.usedLanguage);
+
+                //create database and check for installed drivers
+                Helper.ExtractEmbeddedResource(".db");
+
+                try
+                {
+                    MySyncEntities dbInstance = new MySyncEntities();
+
+                    MessageBox.Show(dbInstance.Database.Connection.ConnectionString);
+                    MessageBox.Show(dbInstance.Database.Connection.State.ToString());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                    return;
+                }
+
+                //---- name all GUI elements ----//
 
                 //General Tab
-                GeneralCBLanguage.SelectedIndex = GeneralCBLanguage.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.usedLanguage).ToList().IndexOf(true);
-                GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
-                GeneralCBXShowNotification.IsChecked = MySync.Default.showNotification;
-                GeneralCBXAddToFavorites.IsChecked = MySync.Default.addToFavorites;
-                GeneralCBXStartAtStartup.IsChecked = MySync.Default.runAtStartup;
-                GeneralCBXFastSync.IsChecked = MySync.Default.fastSync;
-
+                GeneralCBLanguage.SelectedIndex = GeneralCBLanguage.Items.Cast<ComboBoxItem>().Select(x => x.Uid == UserPreferences.usedLanguage).ToList().IndexOf(true);
+                GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == UserPreferences.synchronizationInterval).ToList().IndexOf(true);
+                GeneralCBXShowNotification.IsChecked = UserPreferences.showNotification;
+                GeneralCBXAddToFavorites.IsChecked = UserPreferences.addToFavorites;
+                GeneralCBXStartAtStartup.IsChecked = UserPreferences.runAtStartup;
+                GeneralCBXFastSync.IsChecked = UserPreferences.fastSync;
+                
                 //Notification Icon
                 NotifyIcon.InitializeNotifyIcon();
                 if (!reinitialization) NotifyIcon.ShowWindow(false);
@@ -86,10 +123,10 @@ namespace My_Sync
                 HistoryRTBHistory.AppendText(DAL.GetHistory());
 
                 //Creates a filewatcher for every server entry point
-                Synchronization.RefreshWatcher();
+                //Synchronization.RefreshWatcher();
 
                 //Checking the filesystem and database for new/changed/deleted files and folders
-                Task.Run(() => Synchronization.CheckForDifferencies());
+                //Task.Run(() => Synchronization.CheckForDifferencies());
             }
         }
 
@@ -154,6 +191,22 @@ namespace My_Sync
             }
         }
 
+        /// <summary>
+        /// Validates the given condition and colors the label red (false) or black (true)
+        /// </summary>
+        /// <param name="guiLabel">label element which got validated</param>
+        /// <param name="condition">defines in which color the label get painted</param>
+        private bool ValidateGUIElement(TextBlock guiLabel, bool condition)
+        {
+            using (new Logger(guiLabel, condition))
+            {
+                if (condition) guiLabel.Foreground = Brushes.Black;
+                else guiLabel.Foreground = Brushes.Red;
+
+                return condition;
+            }
+        }
+
         #region Eventhandler
 
         #region General Tab
@@ -173,7 +226,8 @@ namespace My_Sync
                 SetLanguageDictionary(uid);
 
                 //save selection to settings
-                Helper.SaveSetting("usedLanguage", uid);
+                UserPreferences.usedLanguage = uid;
+                UserPreferences.Save();
 
                 InitializeObjects(true);
             }
@@ -195,7 +249,9 @@ namespace My_Sync
                     string uid = ((ContentControl)(GeneralCBInterval.SelectedItem)).Uid.ToString();
 
                     //save selection to settings
-                    Helper.SaveSetting("synchronizationInterval", uid);
+                    UserPreferences.synchronizationInterval = uid;
+                    UserPreferences.Save();
+
                     Synchronization.RefreshWatcher();
                 }
             }
@@ -216,11 +272,13 @@ namespace My_Sync
                     GeneralCBInterval.IsEnabled = false;
                 else
                 {
-                    GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == MySync.Default.synchronizationInterval).ToList().IndexOf(true);
+                    GeneralCBInterval.SelectedIndex = GeneralCBInterval.Items.Cast<ComboBoxItem>().Select(x => x.Uid == UserPreferences.synchronizationInterval).ToList().IndexOf(true);
                     GeneralCBInterval.IsEnabled = true;
                 }
 
-                Helper.SaveSetting("fastSync", status);
+                //save selection to settings
+                UserPreferences.fastSync = status;
+                UserPreferences.Save();
             }
         }
 
@@ -246,7 +304,8 @@ namespace My_Sync
                     rkApp.DeleteValue(nameHelper.Name, false);
 
                 //save selection to settings
-                Helper.SaveSetting("runAtStartup", (bool)GeneralCBXStartAtStartup.IsChecked);
+                UserPreferences.runAtStartup = (bool)GeneralCBXStartAtStartup.IsChecked;
+                UserPreferences.Save();
             }
         }
 
@@ -260,7 +319,8 @@ namespace My_Sync
             using (new Logger(sender, e))
             {
                 //save selection to settings
-                Helper.SaveSetting("showNotification", (bool)GeneralCBXShowNotification.IsChecked);
+                UserPreferences.showNotification = (bool)GeneralCBXShowNotification.IsChecked;
+                UserPreferences.Save();
             }
         }
 
@@ -288,7 +348,8 @@ namespace My_Sync
                 }
 
                 //save selection to settings
-                Helper.SaveSetting("addToFavorites", (bool)GeneralCBXAddToFavorites.IsChecked);
+                UserPreferences.addToFavorites = (bool)GeneralCBXAddToFavorites.IsChecked;
+                UserPreferences.Save();
             }
         }
 
@@ -458,10 +519,18 @@ namespace My_Sync
             {
                 //Validate inputs
                 List<bool> error = new List<bool>();
-                error.Add(ValidateGUIElement(PopupTBLServerType, (PopupTBXServerType.SelectedIndex != -1)));
-                error.Add(ValidateGUIElement(PopupTBLDescription, !String.IsNullOrEmpty(PopupTBXDescription.Text.Trim()) && !DAL.GetServerEntryPoints().Exists(x => x.Description.Equals(PopupTBXDescription.Text.Trim()))));
-                error.Add(ValidateGUIElement(PopupTBLFolder, Directory.Exists(PopupTBXFolder.Text.Trim())));
-                error.Add(ValidateGUIElement(PopupTBLServerEntryPoint, !String.IsNullOrEmpty(PopupTBXServerEntryPoint.Text.Trim())));
+
+                Uri uriResult = null;
+                Uri.TryCreate(PopupTBXServerEntryPoint.Text.Trim(), UriKind.Absolute, out uriResult);
+
+                //an image must be selected
+                error.Add(ValidateGUIElement(PopupTBLServerType, (PopupTBXServerType.SelectedIndex != -1)));                                                         
+                //description must not be empty and must not exist already
+                error.Add(ValidateGUIElement(PopupTBLDescription, !String.IsNullOrEmpty(PopupTBXDescription.Text.Trim()) && !DAL.GetServerEntryPoints().Exists(x => x.Description.ToLower().Equals(PopupTBXDescription.Text.Trim().ToLower()))));
+                //folder must not be empty and valid in the file system and must not be exist in another server entry point
+                error.Add(ValidateGUIElement(PopupTBLFolder, Directory.Exists(PopupTBXFolder.Text.Trim()) && !DAL.GetServerEntryPoints().Exists(x => x.Folder.StartsWith(PopupTBXFolder.Text.Trim()) || PopupTBXFolder.Text.Trim().StartsWith(x.Folder))));
+                //server entry point must not be empty and have a valid URI string
+                error.Add(ValidateGUIElement(PopupTBLServerEntryPoint, !String.IsNullOrEmpty(PopupTBXServerEntryPoint.Text.Trim()) && uriResult != null && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)));
 
                 if (error.Contains(false)) return;
 
@@ -561,7 +630,7 @@ namespace My_Sync
         /// <param name="e">event arguments</param>
         private void WindowBTNClose(object sender, RoutedEventArgs e)
         {
-            MySync.Default.Save();
+            UserPreferences.Save();
             Close();
         }
 
@@ -593,21 +662,5 @@ namespace My_Sync
         }
 
         #endregion
-
-        /// <summary>
-        /// Validates the given condition and colors the label red (false) or black (true)
-        /// </summary>
-        /// <param name="guiLabel">label element which got validated</param>
-        /// <param name="condition">defines in which color the label get painted</param>
-        private bool ValidateGUIElement(TextBlock guiLabel, bool condition)
-        {
-            using (new Logger(guiLabel, condition))
-            {
-                if (condition) guiLabel.Foreground = Brushes.Black;
-                else guiLabel.Foreground = Brushes.Red;
-
-                return condition;
-            }
-        }
     }
 }
