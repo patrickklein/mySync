@@ -18,10 +18,7 @@ namespace MySync.Server
     {
         protected void Application_Start()
         {
-            //Create Database instance
-            NHibernate.Cfg.Configuration configuration = new NHibernate.Cfg.Configuration();
-            configuration.Configure();
-            ApplicationCore.Instance.SessionFactory = configuration.BuildSessionFactory();
+            InitHibernate();
 
             AreaRegistration.RegisterAllAreas();
 
@@ -30,6 +27,14 @@ namespace MySync.Server
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             AuthConfig.RegisterAuth();
+        }
+
+        private static void InitHibernate()
+        {
+            //Create Database instance
+            NHibernate.Cfg.Configuration configuration = new NHibernate.Cfg.Configuration();
+            configuration.Configure();
+            ApplicationCore.Instance.SessionFactory = configuration.BuildSessionFactory();
         }
     }
 }
