@@ -18,7 +18,7 @@ namespace MySync.Server
     {
         protected void Application_Start()
         {
-            //InitHibernate();
+            InitHibernate();
 
             AreaRegistration.RegisterAllAreas();
 
