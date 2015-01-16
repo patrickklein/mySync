@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MySync.Server.Configuration;
+using MySync.Server.DAL;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -10,10 +12,13 @@ namespace MySync.Server.DataProfile
     {
         public bool IsFolder { get; set; }
         public char status { get; set; }
-        public DateTime CreationTime { get; set; }
-        public DateTime LastWriteTime { get; set; }
-        public DateTime LastAccessTime { get; set; }
+        public string CreationTime { get; set; }
+        public string LastWriteTime { get; set; }
+        public string LastAccessTime { get; set; }
+        public string LastSyncTime { get; set; }
         public Int64 Length { get; set; }
+        public Int64 MaxFileSize { get; set; }
+        public Int64 MaxDiskSpace { get; set; }
         public int Files { get; set; }
         public int Folders { get; set; }
         public int MaxRequestLength { get; set; }
@@ -53,11 +58,20 @@ namespace MySync.Server.DataProfile
         /// <param name="section">HttpRuntimeSection from asp.net page</param>
         public virtual void SetSection(HttpServerUtilityBase Server, HttpRequestBase Request, HttpRuntimeSection section)
         {
-            //get params from form and for data saving
+            //get params from form (database)
+            ConfigurationService configService = new ConfigurationService();
+            configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+            DAL.Configuration config = configService.Get("maxFileSize");
+            this.MaxFileSize = (config != null) ? Convert.ToInt64(config.Value) * 1024 * 1000 : 0;
+
+            config = configService.Get("maxDiskSpace");
+            this.MaxDiskSpace = (config != null) ? Convert.ToInt64(config.Value) * 1024 * 1000 : 0;
+
+            //get params from request for data saving
             this.File = Request.Files["uploadedFile"];
-            this.CreationTime = Convert.ToDateTime(Request.Params["creationTime"]);
-            this.LastWriteTime = Convert.ToDateTime(Request.Params["lastWriteTime"]);
-            this.LastAccessTime = Convert.ToDateTime(Request.Params["lastAccessTime"]);
+            this.CreationTime = Request.Params["creationTime"];
+            this.LastWriteTime = Request.Params["lastWriteTime"];
+            this.LastAccessTime = Request.Params["lastAccessTime"];
             this.Length = Convert.ToInt64(Request.Params["length"]);
             this.Files = Convert.ToInt32(Request.Params["files"]);
             this.Folders = Convert.ToInt32(Request.Params["folders"]);

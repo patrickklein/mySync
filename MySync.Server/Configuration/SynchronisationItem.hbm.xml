@@ -16,12 +16,9 @@
     <property name="LastWriteTime" column="lastwritetime" type="String"/>
     <property name="LastSyncTime" column="lastsynctime" type="String"/>
     <property name="Size" column="size" type="Int64"/>
-    <property name="FolderFlag" column="folderflag" type="Boolean"/>
-    <property name="HiddenFlag" column="hiddenflag" type="Boolean"/>
-    <property name="SystemFlag" column="systemflag" type="Boolean"/>
-    <property name="Files" column="files" type="Int64"/>
-    <property name="Folders" column="folders" type="Int64"/>
+    <property name="IsFolder" column="isfolder" type="Boolean"/>
     <property name="Path" column="path" type="String"/>
+    <property name="RelativePath" column="relativepath" type="String"/>
   </class>
 
 </hibernate-mapping>

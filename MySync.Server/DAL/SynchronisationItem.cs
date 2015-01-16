@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySync.Server.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -16,16 +17,26 @@ namespace MySync.Server.DAL
         public virtual String LastWriteTime { get; set; }
         public virtual String LastSyncTime { get; set; }
         public virtual long Size { get; set; }
-        public virtual Boolean FolderFlag { get; set; }
-        public virtual Boolean HiddenFlag { get; set; }
-        public virtual Boolean SystemFlag { get; set; }
-        public virtual long Files { get; set; }
-        public virtual long Folders { get; set; }
+        public virtual Boolean IsFolder { get; set; }
         public virtual String Path { get; set; }
+        public virtual String RelativePath { get; set; }
     }
 
     public class SynchronisationItemService : DBService
     {
+        /// <summary>
+        /// Sums the size values from the database for the files/folders in the given folder
+        /// </summary>
+        /// <param name="path">search path for identifying the right entries</param>
+        /// <returns>total size of all SynchronisationItem objects in the database</returns>
+        public long GetDiskSize(string path)
+        {
+            using (new Logger(path))
+            {
+                return base.GetAll<SynchronisationItem>().Where(x => x.RelativePath.StartsWith(path)).Sum(x => x.Size);
+            }
+        }
+
         /// <summary>
         /// Retrievs an existing SynchronisationItem object with the given term from the database and returns the object
         /// </summary>
@@ -33,7 +44,24 @@ namespace MySync.Server.DAL
         /// <returns>found SynchronisationItem object</returns>
         public SynchronisationItem Get(string path)
         {
-            return base.GetAll<SynchronisationItem>().SingleOrDefault(x => x.Path == path);
+            using (new Logger(path))
+            {
+                return base.GetAll<SynchronisationItem>().SingleOrDefault(x => x.Path == path);
+            }
+        }
+
+        /// <summary>
+        /// Retrievs an existing SynchronisationItem object with the given name and directory from the database and returns the object
+        /// </summary>
+        /// <param name="path">search path for identifying the right entry</param>
+        /// <param name="fullname">search name for identifying the right entry</param>
+        /// <returns>found SynchronisationItem object</returns>
+        public SynchronisationItem Get(string path, string fullname)
+        {
+            using (new Logger(path, fullname))
+            {
+                return base.GetAll<SynchronisationItem>().SingleOrDefault(x => x.RelativePath == path && x.Fullname == fullname);
+            }
         }
 
         /// <summary>
@@ -42,7 +70,10 @@ namespace MySync.Server.DAL
         /// <param name="synchronisationItem">object to save</param>
         public void Add(SynchronisationItem synchronisationItem)
         {
-            base.Add(synchronisationItem);
+            using (new Logger(synchronisationItem))
+            {
+                base.Add(synchronisationItem);
+            }
         }
 
         /// <summary>
@@ -52,15 +83,18 @@ namespace MySync.Server.DAL
         /// <param name="synchronisationItem">object to update</param>
         public void Update(SynchronisationItem synchronisationItem)
         {
-            if (String.IsNullOrEmpty(synchronisationItem.Fullname)) return;
-
-            SynchronisationItem existingValue = Get(synchronisationItem.Fullname);
-            if (existingValue != null)
+            using (new Logger(synchronisationItem))
             {
-                existingValue.Fullname = synchronisationItem.Fullname;
-                base.Update(existingValue);
+                if (String.IsNullOrEmpty(synchronisationItem.Fullname)) return;
+
+                SynchronisationItem existingValue = Get(synchronisationItem.Fullname);
+                if (existingValue != null)
+                {
+                    existingValue.Fullname = synchronisationItem.Fullname;
+                    base.Update(existingValue);
+                }
+                else Add(synchronisationItem);
             }
-            else Add(synchronisationItem);
         }
 
         /// <summary>
@@ -69,7 +103,10 @@ namespace MySync.Server.DAL
         /// <param name="synchronisationItem">object to delete</param>
         public void Delete(SynchronisationItem synchronisationItem)
         {
-            base.Delete(synchronisationItem);
+            using (new Logger(synchronisationItem))
+            {
+                base.Delete(synchronisationItem);
+            }
         }
         
         /// <summary>
@@ -78,9 +115,12 @@ namespace MySync.Server.DAL
         /// <param name="fullPath">directory and filename</param>
         public void Delete(string fullPath)
         {
-            List<SynchronisationItem> existingItems = base.GetAll<SynchronisationItem>().Where(x => x.Path.StartsWith(fullPath)).ToList<SynchronisationItem>();
-            foreach(SynchronisationItem item in existingItems)
-                base.Delete(item);
+            using (new Logger(fullPath))
+            {
+                List<SynchronisationItem> existingItems = base.GetAll<SynchronisationItem>().Where(x => x.Path.StartsWith(fullPath)).ToList<SynchronisationItem>();
+                foreach (SynchronisationItem item in existingItems)
+                    base.Delete(item);
+            }
         }
     }
 }

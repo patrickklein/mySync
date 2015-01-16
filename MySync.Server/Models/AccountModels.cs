@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MySync.Server.Configuration;
+using MySync.Server.DAL;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,6 +12,8 @@ using System.Web.Security;
 
 namespace MySync.Server.Models
 {
+    #region Custom DataType Attributes
+
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class FileSizeAttribute : DataTypeAttribute 
     {
@@ -20,7 +24,9 @@ namespace MySync.Server.Models
             if(ErrorMessage == null && ErrorMessageResourceName == null)
             {
                 HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-                ErrorMessage = String.Format("Please enter a valid number between {0} and {1}.", 0, section.MaxRequestLength / 1024 / 1000);
+                int maxFileSize = section.MaxRequestLength / 1024 / 1000;
+
+                ErrorMessage = String.Format("Please enter a valid number between {0} and {1}.", 0, maxFileSize);
             }
 
  	        return base.FormatErrorMessage(name);
@@ -37,21 +43,50 @@ namespace MySync.Server.Models
 
             //check if value is lower than maximum allowed
             HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            int maxFilesize = section.MaxRequestLength / 1024 / 1000;
-            if ((retNum < 0 || retNum > maxFilesize) || !parse) return false;
+            int maxFileSize = section.MaxRequestLength / 1024 / 1000;
+            if ((retNum < 0 || retNum > maxFileSize) || !parse) return false;
 
             return true;
         }
     }
 
-    /*public class UsersContext : DbContext
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+    public class DiskSizeAttribute : DataTypeAttribute
     {
-        public UsersContext() : base("DefaultConnection")
+        public DiskSizeAttribute() : base("integer") { }
+
+        public override string FormatErrorMessage(string name)
         {
+            if (ErrorMessage == null && ErrorMessageResourceName == null)
+            {
+                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                ErrorMessage = String.Format("Please enter a valid number greater than 0 and the maximum allowed file size.");
+            }
+
+            return base.FormatErrorMessage(name);
         }
 
-        public DbSet<UserProfile> UserProfiles { get; set; }
-    }*/
+        public override bool IsValid(object value)
+        {
+            //if empty
+            if (value == null) return true;
+
+            //check if value is an integer value
+            int retNum;
+            bool parse = int.TryParse(Convert.ToString(value), out retNum);
+
+            ConfigurationService configService = new ConfigurationService();
+            configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+            DAL.Configuration config = configService.Get("maxFileSize");
+            Int64 savedMaxFileSize = (config != null) ? Convert.ToInt64(config.Value) : 0;
+
+            if ((retNum < 0 || retNum < savedMaxFileSize) || !parse) return false;
+
+            return true;
+        }
+    }
+
+    #endregion
 
     [Table("UserProfile")]
     public class UserProfile
@@ -75,7 +110,7 @@ namespace MySync.Server.Models
 
         [Required]
         [Display(Name = "Maximum available disk space for synchronization")]
-        [FileSize]
+        [DiskSize]
         public long DiskSpace { get; set; }
 
         [Required]

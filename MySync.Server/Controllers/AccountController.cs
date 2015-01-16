@@ -25,131 +25,278 @@ namespace MySync.Server.Controllers
     [InitializeSimpleMembership]
     public class AccountController : Controller
     {
-        //
-        // GET: /Account/Setup
-
+        ///
+        /// GET: /Account/Setup
+        /// 
+        /// <summary>
+        /// Setup page for configuring the server settings
+        /// </summary>
+        /// <param name="returnUrl">URI to return to</param>
+        /// <returns>view to show</returns>
         [AllowAnonymous]
         public ActionResult Setup(string returnUrl)
         {
-            // existing DataProfile Classes from web.config file
-            NameValueCollection appSettings = ConfigurationManager.AppSettings;
-            Dictionary<string, string> dpClasses = new Dictionary<string, string>();
-            dpClasses.Add("", "");
-            List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
-            foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
-            ViewBag.DPClasses = dpClasses;
+            using (new Logger(returnUrl))
+            {
+                // existing DataProfile Classes from web.config file
+                NameValueCollection appSettings = ConfigurationManager.AppSettings;
+                Dictionary<string, string> dpClasses = new Dictionary<string, string>();
+                dpClasses.Add("", "");
+                List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
+                foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
+                ViewBag.DPClasses = dpClasses;
 
-            HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            ViewBag.MaxFileSize = section.MaxRequestLength / 1024 / 1000;
-            ViewBag.ReturnUrl = returnUrl;
+                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                ViewBag.MaxFileSize = section.MaxRequestLength / 1024 / 1000;
+                ViewBag.ReturnUrl = returnUrl;
 
-            //Get values from database
-            SetupModel model = new SetupModel();
-            ConfigurationService configService = new ConfigurationService();
-            configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+                //Get values from database
+                SetupModel model = new SetupModel();
+                ConfigurationService configService = new ConfigurationService();
+                configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
 
-            DAL.Configuration config = configService.Get("dataSavingPoint");
-            model.DataProfile = (config != null) ? config.Value : "";
-            
-            config = configService.Get("maxFileSize");
-            model.FileSize = (config != null) ? Convert.ToInt32(config.Value) : 0;
+                DAL.Configuration config = configService.Get("dataSavingPoint");
+                model.DataProfile = (config != null) ? config.Value : "";
 
-            config = configService.Get("maxDiskSpace");
-            model.DiskSpace = (config != null) ? Convert.ToInt32(config.Value) : 0;
+                config = configService.Get("maxFileSize");
+                model.FileSize = (config != null) ? Convert.ToInt32(config.Value) : 0;
 
-            return View(model);
+                config = configService.Get("maxDiskSpace");
+                model.DiskSpace = (config != null) ? Convert.ToInt32(config.Value) : 0;
+
+                return View(model);
+            }
         }
 
-        //
-        // POST: /Account/Setup
-
+        ///
+        /// POST: /Account/Setup
+        /// <summary>
+        /// Setup page for checking and saving the server settings
+        /// </summary>
+        /// <param name="model">current data model</param>
+        /// <param name="returnUrl">URI to return to</param>
+        /// <returns>current view to show</returns>
         [HttpPost]
         [AllowAnonymous]
         public ActionResult Setup(SetupModel model, string returnUrl)
         {
-            //Get values from database
-            ConfigurationService configService = new ConfigurationService();
-            configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
-
-            DAL.Configuration config = configService.Get("dataSavingPoint");
-            ViewBag.SavedDataSavingPoint = (config != null) ? config.Value : "";
-
-            config = configService.Get("maxFileSize");
-            ViewBag.SavedMaxFileSize = (config != null) ? config.Value : "";
-
-            config = configService.Get("maxDiskSpace");
-            ViewBag.SavedMaxDiskSpace = (config != null) ? config.Value : "";
-
-            HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
-            int maxFilesize = section.MaxRequestLength / 1024 / 1000;
-            ViewBag.MaxFileSize = maxFilesize;
-
-            // existing DataProfile Classes from web.config file
-            NameValueCollection appSettings = ConfigurationManager.AppSettings;
-            Dictionary<string, string> dpClasses = new Dictionary<string, string>();
-            dpClasses.Add("", "");
-            List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
-            foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
-            ViewBag.DPClasses = dpClasses;
-
-            //check all given values from the view
-            if (model.FileSize >= 0 && model.FileSize <= maxFilesize && model.DiskSpace >= 0 && model.DataProfile != "")
+            using (new Logger(model, returnUrl))
             {
-                //Save data to database
-                configService.Update(new DAL.Configuration() { Field = "dataSavingPoint", Value = model.DataProfile });
-                configService.Update(new DAL.Configuration() { Field = "maxFileSize", Value = model.FileSize.ToString() });
-                configService.Update(new DAL.Configuration() { Field = "maxDiskSpace", Value = model.DiskSpace.ToString() });
-            }
+                //Get values from database
+                ConfigurationService configService = new ConfigurationService();
+                configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
 
-            return View(model);
+                DAL.Configuration config = configService.Get("dataSavingPoint");
+                ViewBag.SavedDataSavingPoint = (config != null) ? config.Value : "";
+
+                config = configService.Get("maxFileSize");
+                ViewBag.SavedMaxFileSize = (config != null) ? config.Value : "";
+
+                config = configService.Get("maxDiskSpace");
+                ViewBag.SavedMaxDiskSpace = (config != null) ? config.Value : "";
+
+                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                int maxFilesize = section.MaxRequestLength / 1024 / 1000;
+                ViewBag.MaxFileSize = maxFilesize;
+
+                // existing DataProfile Classes from web.config file
+                NameValueCollection appSettings = ConfigurationManager.AppSettings;
+                Dictionary<string, string> dpClasses = new Dictionary<string, string>();
+                dpClasses.Add("", "");
+                List<string> dpKeys = appSettings.AllKeys.Where(x => x.StartsWith("DP")).ToList();
+                foreach (string key in dpKeys) dpClasses.Add(key, appSettings.Get(key));
+                ViewBag.DPClasses = dpClasses;
+
+                //check all given values from the view
+                if (model.FileSize >= 0 && model.FileSize <= maxFilesize && model.DiskSpace >= 0 && model.DataProfile != "")
+                {
+                    //Save data to database
+                    configService.Update(new DAL.Configuration() { Field = "dataSavingPoint", Value = model.DataProfile });
+                    configService.Update(new DAL.Configuration() { Field = "maxFileSize", Value = model.FileSize.ToString() });
+                    configService.Update(new DAL.Configuration() { Field = "maxDiskSpace", Value = model.DiskSpace.ToString() });
+                }
+
+                return View(model);
+            }
         }
 
-        //
-        // POST: /Account/Upload
-
+        ///
+        /// POST: /Account/Upload
+        /// 
+        /// <summary>
+        /// Page for uploading a file/folder from the client to the server
+        /// </summary>
+        /// <param name="formCollection">current collection of the form</param>
+        /// <returns>current view to show</returns>
         [AllowAnonymous]
         [HttpPost]
         public ActionResult Upload(FormCollection formCollection)
         {
-            if (Request != null)
-            {                
-                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+            using (new Logger(formCollection))
+            {
+                if (Request != null)
+                {
+                    HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
-                ConfigurationService configService = new ConfigurationService();
-                configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+                    ConfigurationService configService = new ConfigurationService();
+                    configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
 
-                DAL.Configuration config = configService.Get("dataSavingPoint");
-                string className = (config != null) ? config.Value : "";
-                DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
-                newContent.SetSection(Server, Request, section);
-                newContent.SaveFile();
+                    DAL.Configuration config = configService.Get("dataSavingPoint");
+                    string className = (config != null) ? config.Value : "";
+                    DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
+                    newContent.SetSection(Server, Request, section);
+
+                    string error = "";
+                    try { newContent.SaveFile(); }
+                    catch (Exception ex) 
+                    { 
+                        error = ex.Message;
+                        string message = String.Format("Filename: {0}, Path: {1}, Error: {2}", newContent.FullName, newContent.FromRootToFolder, error);
+                        new Logger().Log(message);
+                    }
+
+                    //Response back to client
+                    Response.Clear();
+                    Response.AppendHeader("Filename", newContent.FullName);
+                    Response.AppendHeader("Path", newContent.FromRootToFolder);
+                    Response.AppendHeader("LastSyncTime", newContent.LastSyncTime.ToString());
+                    Response.AppendHeader("Error", error);
+                    Response.Flush();
+                    Response.End();
+                }
+
+                return View();
             }
-
-            return RedirectToAction("Setup", "Account");
         }
 
-        //
-        // POST: /Account/Delete
-
+        ///
+        /// POST: /Account/Delete
+        /// 
+        /// <summary>
+        /// Page for deleting a file/folder on the server
+        /// </summary>
+        /// <param name="formCollection">current collection of the form</param>
+        /// <returns>current view to show</returns>
         [AllowAnonymous]
         [HttpPost]
         public ActionResult Delete(FormCollection formCollection)
         {
-            if (Request != null)
+            using (new Logger(formCollection))
             {
-                HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                if (Request != null)
+                {
+                    HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
-                ConfigurationService configService = new ConfigurationService();
-                configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+                    ConfigurationService configService = new ConfigurationService();
+                    configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
 
-                DAL.Configuration config = configService.Get("dataSavingPoint");
-                string className = (config != null) ? config.Value : "";
-                DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
-                newContent.SetSection(Server, Request, section);
-                newContent.DeleteAll();
+                    DAL.Configuration config = configService.Get("dataSavingPoint");
+                    string className = (config != null) ? config.Value : "";
+                    DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
+                    newContent.SetSection(Server, Request, section);
+
+                    string error = "";
+                    try { newContent.DeleteAll(); }
+                    catch (Exception ex)
+                    {
+                        error = ex.Message;
+                        string message = String.Format("Filename: {0}, Path: {1}, Error: {2}", newContent.FullName, newContent.FromRootToFolder, error);
+                        new Logger().Log(message);
+                    }
+
+                    //Response back to client
+                    string path = (newContent.FromRootToFolder == null) ? "" : newContent.FromRootToFolder;
+                    Response.Clear();
+                    Response.AppendHeader("Filename", newContent.FullName);
+                    Response.AppendHeader("Path", path);
+                    Response.AppendHeader("Error", error);
+                    Response.Flush();
+                    Response.End();
+                }
+
+                return View();
             }
+        }
 
-            return RedirectToAction("Setup", "Account");
+        ///
+        /// POST: /Account/GetList
+        /// 
+        /// <summary>
+        /// Page for gathering a list of files and folders existing in the server database
+        /// </summary>
+        /// <param name="formCollection">current collection of the form</param>
+        /// <returns>current view to show</returns>
+        [HttpPost]
+        [AllowAnonymous]
+        public ActionResult GetList(FormCollection formCollection)
+        {
+            using (new Logger(formCollection))
+            {
+                SynchronisationItemService syncItemservice = new SynchronisationItemService();
+                syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+                List<SynchronisationItem> list = syncItemservice.GetAll<SynchronisationItem>().ToList();
+                Response.Clear();
+
+                for (int i = 0; i < list.Count; i++)
+                {
+                    Response.AppendHeader("Fullname" + i.ToString(), list[i].Fullname);
+                    Response.AppendHeader("Name" + i.ToString(), list[i].Name);
+                    Response.AppendHeader("CreationTime" + i.ToString(), list[i].CreationTime);
+                    Response.AppendHeader("LastAccessTime" + i.ToString(), list[i].LastAccessTime);
+                    Response.AppendHeader("LastWriteTime" + i.ToString(), list[i].LastWriteTime);
+                    Response.AppendHeader("LastSyncTime" + i.ToString(), list[i].LastSyncTime);
+                    Response.AppendHeader("Path" + i.ToString(), list[i].RelativePath);
+                    Response.AppendHeader("Extension" + i.ToString(), (String.IsNullOrEmpty(list[i].Extension)) ? "" : list[i].Extension);
+                    Response.AppendHeader("Size" + i.ToString(), list[i].Size.ToString());
+                    Response.AppendHeader("IsFolder" + i.ToString(), Convert.ToDecimal(list[i].IsFolder).ToString());
+                }
+                Response.Flush();
+                Response.End();
+
+                return View();
+            }
+        }
+
+        ///
+        /// POST: /Account/Download
+        /// 
+        /// <summary>
+        /// Page for downloadinf a file from the server to the client
+        /// </summary>
+        /// <param name="formCollection">current collection of the form</param>
+        /// <returns>current view to show</returns>
+        [HttpPost]
+        [AllowAnonymous]
+        public ActionResult Download(FormCollection formCollection)
+        {
+            using (new Logger(formCollection))
+            {
+                SynchronisationItemService syncItemservice = new SynchronisationItemService();
+                syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+                SynchronisationItem item = syncItemservice.Get(Request.Params["directory"], Request.Params["fullName"]);
+
+                Response.Clear();
+
+                if (!item.IsFolder)
+                {
+                    Response.AddHeader("Content-Disposition", "attachment; filename=" + item.Fullname);
+                    Response.ContentType = "application/octet-stream";
+                    Response.WriteFile(item.Path);
+                }
+                Response.AppendHeader("Fullname", item.Fullname);
+                Response.AppendHeader("CreationTime", item.CreationTime);
+                Response.AppendHeader("LastAccessTime", item.LastAccessTime);
+                Response.AppendHeader("LastWriteTime", item.LastWriteTime);
+                Response.AppendHeader("LastSyncTime", item.LastSyncTime);
+                Response.AppendHeader("IsFolder", item.IsFolder.ToString());
+                Response.AppendHeader("Path", item.RelativePath);
+                Response.Flush();
+                Response.End();
+
+                return View();
+            }
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

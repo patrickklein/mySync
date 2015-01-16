@@ -26,11 +26,11 @@
                 </tr>-->
                 <tr>
                     <td><%: Html.LabelFor(m => m.DiskSpace, new { @class = "checkbox" }) %><b>:</b></td>
-                    <td><%: Html.TextBoxFor(m => m.DiskSpace)%></td>
+                    <td><%: Html.TextBoxFor(m => m.DiskSpace)%>&nbsp;&nbsp;Mb</td>
                     <td><%: Html.ValidationMessageFor(m => m.DiskSpace) %></td>
                 </tr>
                 <tr>
-                    <td style="width:250px"><%: Html.LabelFor(m => m.FileSize, new { @class = "checkbox" }) %><b>:</b></td>
+                    <td style="width:250px"><%: Html.LabelFor(m => m.FileSize, new { @class = "checkbox" }) %><b>: *</b></td>
                     <td style="width:400px"><%: Html.TextBoxFor(m => m.FileSize) %>&nbsp;&nbsp;&lt;=&nbsp;<%: ViewBag.MaxFileSize %>&nbsp;Mb</td>
                     <td style="width:300px"><%: Html.ValidationMessageFor(m => m.FileSize) %></td>
                 </tr>
@@ -46,14 +46,6 @@
         <br />
         <span>http://localhost:51992/Account/Upload</span>
     </section>
-    
-    <!--
-    <% using(Html.BeginForm("Upload", "Account", FormMethod.Post, new { enctype = "multipart/form-data" })) { %>
-        <label for="file">Filename:</label>
-        <input type="file" name="UploadedFile" style="width:700px" />
-        <input type="submit" name="Submit" value="Submit" />
-    <% } %>-->
-	
 </asp:Content>
 
 <asp:Content ID="scriptsContent" ContentPlaceHolderID="ScriptsSection" runat="server">
