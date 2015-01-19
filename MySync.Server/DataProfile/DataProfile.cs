@@ -72,6 +72,7 @@ namespace MySync.Server.DataProfile
             this.CreationTime = Request.Params["creationTime"];
             this.LastWriteTime = Request.Params["lastWriteTime"];
             this.LastAccessTime = Request.Params["lastAccessTime"];
+            this.LastSyncTime = "";
             this.Length = Convert.ToInt64(Request.Params["length"]);
             this.Files = Convert.ToInt32(Request.Params["files"]);
             this.Folders = Convert.ToInt32(Request.Params["folders"]);

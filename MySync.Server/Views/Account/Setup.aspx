@@ -44,7 +44,7 @@
         <% } %>
 
         <br />
-        <span>http://localhost:51992/Account/Upload</span>
+        <span><%: ViewBag.SyncURL %></span>
     </section>
 </asp:Content>
 

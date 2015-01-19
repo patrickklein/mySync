@@ -136,7 +136,7 @@ namespace MySync.Server.DataProfile
                 item.Path = path;
                 item.RelativePath = relativePath;
                 item.LastWriteTime = LastWriteTime.ToString();
-                item.LastSyncTime = LastSyncTime.ToString();
+                item.LastSyncTime = (LastSyncTime == null) ? "" : LastSyncTime.ToString();
                 item.LastAccessTime = LastAccessTime.ToString();
                 item.CreationTime = CreationTime.ToString();
 
@@ -173,7 +173,7 @@ namespace MySync.Server.DataProfile
                     item.Path = path;
                     item.RelativePath = relativePath;
                     item.LastWriteTime = LastWriteTime.ToString();
-                    item.LastSyncTime = LastSyncTime.ToString();
+                    item.LastSyncTime = (LastSyncTime == null) ? "" : LastSyncTime.ToString();
                     item.LastAccessTime = LastAccessTime.ToString();
                     item.CreationTime = CreationTime.ToString();
 

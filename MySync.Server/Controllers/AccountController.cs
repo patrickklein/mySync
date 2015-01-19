@@ -18,6 +18,7 @@ using System.Collections.Specialized;
 using System.Reflection;
 using MySync.Server.DAL;
 using MySync.Server.Configuration;
+using System.Net;
 
 namespace MySync.Server.Controllers
 {
@@ -63,6 +64,12 @@ namespace MySync.Server.Controllers
 
                 config = configService.Get("maxDiskSpace");
                 model.DiskSpace = (config != null) ? Convert.ToInt32(config.Value) : 0;
+
+                //get synchronization url for setup page
+                string ipHost = Dns.GetHostName();
+                string ip = Dns.GetHostByName(ipHost).AddressList[0].ToString();
+                int port = Request.Url.Port;
+                ViewBag.SyncURL = String.Format("http://{0}:{1}/Account/Upload", ip, port);
 
                 return View(model);
             }
@@ -116,6 +123,12 @@ namespace MySync.Server.Controllers
                     configService.Update(new DAL.Configuration() { Field = "maxDiskSpace", Value = model.DiskSpace.ToString() });
                 }
 
+                //get synchronization url for setup page
+                string ipHost = Dns.GetHostName();
+                string ip = Dns.GetHostByName(ipHost).AddressList[0].ToString();
+                int port = Request.Url.Port;
+                ViewBag.SyncURL = String.Format("http://{0}:{1}/Account/Upload", ip, port);
+
                 return View(model);
             }
         }
@@ -136,33 +149,39 @@ namespace MySync.Server.Controllers
             {
                 if (Request != null)
                 {
-                    HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                    try {
+                        HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
-                    ConfigurationService configService = new ConfigurationService();
-                    configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+                        ConfigurationService configService = new ConfigurationService();
+                        configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
 
-                    DAL.Configuration config = configService.Get("dataSavingPoint");
-                    string className = (config != null) ? config.Value : "";
-                    DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
-                    newContent.SetSection(Server, Request, section);
+                        DAL.Configuration config = configService.Get("dataSavingPoint");
+                        string className = (config != null) ? config.Value : "";
+                        DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
+                        newContent.SetSection(Server, Request, section);
 
-                    string error = "";
-                    try { newContent.SaveFile(); }
-                    catch (Exception ex) 
-                    { 
-                        error = ex.Message;
-                        string message = String.Format("Filename: {0}, Path: {1}, Error: {2}", newContent.FullName, newContent.FromRootToFolder, error);
-                        new Logger().Log(message);
+                        string error = "";
+                        try { newContent.SaveFile(); }
+                        catch (Exception ex) 
+                        { 
+                            error = ex.Message;
+                            string message = String.Format("Filename: {0}, Path: {1}, Error: {2}", newContent.FullName, newContent.FromRootToFolder, error);
+                            new Logger().Log(message);
+                        }
+
+                        //Response back to client
+                        Response.Clear();
+                        Response.AppendHeader("Filename", newContent.FullName);
+                        Response.AppendHeader("Path", newContent.FromRootToFolder);
+                        Response.AppendHeader("LastSyncTime", newContent.LastSyncTime);
+                        Response.AppendHeader("Error", error);
+                        Response.Flush();
+                        Response.End();
                     }
-
-                    //Response back to client
-                    Response.Clear();
-                    Response.AppendHeader("Filename", newContent.FullName);
-                    Response.AppendHeader("Path", newContent.FromRootToFolder);
-                    Response.AppendHeader("LastSyncTime", newContent.LastSyncTime.ToString());
-                    Response.AppendHeader("Error", error);
-                    Response.Flush();
-                    Response.End();
+                    catch (Exception ex)
+                    {
+                        new Logger().Log("Error: " + ex.Message.ToString());
+                    }
                 }
 
                 return View();
@@ -185,33 +204,39 @@ namespace MySync.Server.Controllers
             {
                 if (Request != null)
                 {
-                    HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
+                    try {
+                        HttpRuntimeSection section = ConfigurationManager.GetSection("system.web/httpRuntime") as HttpRuntimeSection;
 
-                    ConfigurationService configService = new ConfigurationService();
-                    configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+                        ConfigurationService configService = new ConfigurationService();
+                        configService.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
 
-                    DAL.Configuration config = configService.Get("dataSavingPoint");
-                    string className = (config != null) ? config.Value : "";
-                    DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
-                    newContent.SetSection(Server, Request, section);
+                        DAL.Configuration config = configService.Get("dataSavingPoint");
+                        string className = (config != null) ? config.Value : "";
+                        DataProfile.DataProfile newContent = (DataProfile.DataProfile)Activator.CreateInstance(Assembly.GetExecutingAssembly().GetType("MySync.Server.DataProfile." + className, true, true));
+                        newContent.SetSection(Server, Request, section);
 
-                    string error = "";
-                    try { newContent.DeleteAll(); }
+                        string error = "";
+                        try { newContent.DeleteAll(); }
+                        catch (Exception ex)
+                        {
+                            error = ex.Message;
+                            string message = String.Format("Filename: {0}, Path: {1}, Error: {2}", newContent.FullName, newContent.FromRootToFolder, error);
+                            new Logger().Log(message);
+                        }
+
+                        //Response back to client
+                        string path = (newContent.FromRootToFolder == null) ? "" : newContent.FromRootToFolder;
+                        Response.Clear();
+                        Response.AppendHeader("Filename", HttpUtility.UrlEncode(newContent.FullName));
+                        Response.AppendHeader("Path", HttpUtility.UrlEncode(path));
+                        Response.AppendHeader("Error", error);
+                        Response.Flush();
+                        Response.End();
+                    }
                     catch (Exception ex)
                     {
-                        error = ex.Message;
-                        string message = String.Format("Filename: {0}, Path: {1}, Error: {2}", newContent.FullName, newContent.FromRootToFolder, error);
-                        new Logger().Log(message);
+                        new Logger().Log("Error: " + ex.Message.ToString());
                     }
-
-                    //Response back to client
-                    string path = (newContent.FromRootToFolder == null) ? "" : newContent.FromRootToFolder;
-                    Response.Clear();
-                    Response.AppendHeader("Filename", newContent.FullName);
-                    Response.AppendHeader("Path", path);
-                    Response.AppendHeader("Error", error);
-                    Response.Flush();
-                    Response.End();
                 }
 
                 return View();
@@ -232,27 +257,40 @@ namespace MySync.Server.Controllers
         {
             using (new Logger(formCollection))
             {
-                SynchronisationItemService syncItemservice = new SynchronisationItemService();
-                syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
-
-                List<SynchronisationItem> list = syncItemservice.GetAll<SynchronisationItem>().ToList();
-                Response.Clear();
-
-                for (int i = 0; i < list.Count; i++)
+                try
                 {
-                    Response.AppendHeader("Fullname" + i.ToString(), list[i].Fullname);
-                    Response.AppendHeader("Name" + i.ToString(), list[i].Name);
-                    Response.AppendHeader("CreationTime" + i.ToString(), list[i].CreationTime);
-                    Response.AppendHeader("LastAccessTime" + i.ToString(), list[i].LastAccessTime);
-                    Response.AppendHeader("LastWriteTime" + i.ToString(), list[i].LastWriteTime);
-                    Response.AppendHeader("LastSyncTime" + i.ToString(), list[i].LastSyncTime);
-                    Response.AppendHeader("Path" + i.ToString(), list[i].RelativePath);
-                    Response.AppendHeader("Extension" + i.ToString(), (String.IsNullOrEmpty(list[i].Extension)) ? "" : list[i].Extension);
-                    Response.AppendHeader("Size" + i.ToString(), list[i].Size.ToString());
-                    Response.AppendHeader("IsFolder" + i.ToString(), Convert.ToDecimal(list[i].IsFolder).ToString());
+                    int i = 0;
+                    SynchronisationItemService syncItemservice = new SynchronisationItemService();
+                    syncItemservice.SetSession(ApplicationCore.Instance.SessionFactory.OpenSession());
+
+                    List<SynchronisationItem> list = syncItemservice.GetAll<SynchronisationItem>().ToList();
+                    int bulkSize = Convert.ToInt32(Request.Params["bulkSize"]);
+                    int startAt = Convert.ToInt32(Request.Params["startAt"]);
+
+                    Response.Clear();
+
+                    for (i = startAt; i < list.Count; i++)
+                    {
+                        Response.AppendHeader("Fullname" + i.ToString(), HttpUtility.UrlEncode(list[i].Fullname));
+                        Response.AppendHeader("Name" + i.ToString(), HttpUtility.UrlEncode(list[i].Name));
+                        Response.AppendHeader("CreationTime" + i.ToString(), list[i].CreationTime);
+                        Response.AppendHeader("LastAccessTime" + i.ToString(), list[i].LastAccessTime);
+                        Response.AppendHeader("LastWriteTime" + i.ToString(), list[i].LastWriteTime);
+                        Response.AppendHeader("LastSyncTime" + i.ToString(), list[i].LastSyncTime);
+                        Response.AppendHeader("Path" + i.ToString(), HttpUtility.UrlEncode(list[i].RelativePath));
+                        Response.AppendHeader("Extension" + i.ToString(), (String.IsNullOrEmpty(list[i].Extension)) ? "" : list[i].Extension);
+                        Response.AppendHeader("Size" + i.ToString(), list[i].Size.ToString());
+                        Response.AppendHeader("IsFolder" + i.ToString(), Convert.ToDecimal(list[i].IsFolder).ToString());
+
+                        if (i == startAt + bulkSize) break;
+                    }
+                    Response.Flush();
+                    Response.End();
                 }
-                Response.Flush();
-                Response.End();
+                catch (Exception ex)
+                {
+                    new Logger().Log("Error: " + ex.Message.ToString());
+                }
 
                 return View();
             }
@@ -279,19 +317,23 @@ namespace MySync.Server.Controllers
 
                 Response.Clear();
 
-                if (!item.IsFolder)
+                if (item != null)
                 {
-                    Response.AddHeader("Content-Disposition", "attachment; filename=" + item.Fullname);
-                    Response.ContentType = "application/octet-stream";
-                    Response.WriteFile(item.Path);
+                    if (!item.IsFolder)
+                    {
+                        Response.AddHeader("Content-Disposition", "attachment; filename=" + item.Fullname);
+                        Response.ContentType = "application/octet-stream";
+                        Response.WriteFile(item.Path);
+                    }
+                    Response.AppendHeader("Fullname", HttpUtility.UrlEncode(item.Fullname));
+                    Response.AppendHeader("CreationTime", item.CreationTime);
+                    Response.AppendHeader("LastAccessTime", item.LastAccessTime);
+                    Response.AppendHeader("LastWriteTime", item.LastWriteTime);
+                    Response.AppendHeader("LastSyncTime", item.LastSyncTime);
+                    Response.AppendHeader("IsFolder", item.IsFolder.ToString());
+                    Response.AppendHeader("Path", HttpUtility.UrlEncode(item.RelativePath));
                 }
-                Response.AppendHeader("Fullname", item.Fullname);
-                Response.AppendHeader("CreationTime", item.CreationTime);
-                Response.AppendHeader("LastAccessTime", item.LastAccessTime);
-                Response.AppendHeader("LastWriteTime", item.LastWriteTime);
-                Response.AppendHeader("LastSyncTime", item.LastSyncTime);
-                Response.AppendHeader("IsFolder", item.IsFolder.ToString());
-                Response.AppendHeader("Path", item.RelativePath);
+
                 Response.Flush();
                 Response.End();
 
