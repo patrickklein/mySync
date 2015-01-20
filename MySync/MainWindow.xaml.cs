@@ -44,12 +44,15 @@ namespace My_Sync
                 InitializePopup();
 
                 Synchronization.StartTimer();
+                MemoryManagement.Reduce();
+
+                //Start synchronisation on application startup
+                Synchronization.StartSynchronization();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
             }
-            //CheckInternetConnection.IsConnected
         }
 
         /// <summary>
@@ -90,9 +93,6 @@ namespace My_Sync
                 try
                 {
                     MySyncEntities dbInstance = new MySyncEntities();
-
-                    MessageBox.Show(dbInstance.Database.Connection.ConnectionString);
-                    MessageBox.Show(dbInstance.Database.Connection.State.ToString());
                 }
                 catch (Exception ex)
                 {
@@ -111,8 +111,8 @@ namespace My_Sync
                 GeneralCBXFastSync.IsChecked = UserPreferences.fastSync;
                 
                 //Notification Icon
-                NotifyIcon.InitializeNotifyIcon();
-                if (!reinitialization) NotifyIcon.ShowWindow(false);
+                NotificationIcon.InitializeNotifyIcon();
+                if (!reinitialization) NotificationIcon.ShowWindow(false);
 
                 //Fill GUI for Server Entry Point, File Filter, History
                 ServerDGSynchronizationPoints.Columns.Clear();
@@ -123,10 +123,10 @@ namespace My_Sync
                 HistoryRTBHistory.AppendText(DAL.GetHistory());
 
                 //Creates a filewatcher for every server entry point
-                //Synchronization.RefreshWatcher();
+                Synchronization.RefreshWatcher();
 
                 //Checking the filesystem and database for new/changed/deleted files and folders
-                //Task.Run(() => Synchronization.CheckForDifferencies());
+                Task.Run(() => Synchronization.CheckForDifferencies());
             }
         }
 
@@ -138,6 +138,8 @@ namespace My_Sync
             using (new Logger())
             {
                 PopupWindow.Visibility = Visibility.Hidden;
+                PopupAdd.Visibility = Visibility.Collapsed;
+                PopupDelete.Visibility = Visibility.Collapsed;
 
                 //Label Color
                 PopupTBLServerType.Foreground = Brushes.Black;
@@ -434,6 +436,68 @@ namespace My_Sync
         #region Server Tab 
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ServerEntryPointConfirm_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                int index = ServerDGSynchronizationPoints.SelectedIndex;
+                if (index == -1) return;
+
+                SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
+
+                DeleteServerEntryPoint(selectedSyncPoint);
+                Synchronization.DeleteFromServer(selectedSyncPoint.Server.Replace("/Upload", "/Delete"), selectedSyncPoint.Folder.Split('\\').Last());
+
+                //Close popup window
+                ClosePopup_Click(sender, e);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ServerEntryPointDeny_Click(object sender, RoutedEventArgs e)
+        {
+            using (new Logger(sender, e))
+            {
+                int index = ServerDGSynchronizationPoints.SelectedIndex;
+                if (index == -1) return;
+
+                SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
+                DeleteServerEntryPoint(selectedSyncPoint);
+
+                //Close popup window
+                ClosePopup_Click(sender, e);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="selectedSyncPoint"></param>
+        private void DeleteServerEntryPoint(SynchronizationPoint selectedSyncPoint)
+        {
+            using (new Logger(selectedSyncPoint))
+            {
+                DAL.DeleteServerEntryPoint(selectedSyncPoint.Description);
+
+                ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
+                ServerDGSynchronizationPoints.Items.Refresh();
+
+                //Check for favorites folder and deletes the related link
+                AddToFavorites_Check(null, null);
+
+                Synchronization.RefreshWatcher();
+            }
+        }
+
+        /// <summary>
         /// Opens a folder browser dialog for choosing the directory which should get be synchronized and adds the chosen path to the related textbox
         /// </summary>
         /// <param name="sender">event sender</param>
@@ -465,6 +529,7 @@ namespace My_Sync
             using (new Logger(sender, e))
             {
                 InitializePopup();
+                PopupAdd.Visibility = Visibility.Visible;
                 PopupWindow.Visibility = Visibility.Visible;
             }
         }
@@ -481,17 +546,9 @@ namespace My_Sync
                 int index = ServerDGSynchronizationPoints.SelectedIndex;
                 if (index == -1) return;
 
-                SynchronizationPoint selectedSyncPoint = ServerDGSynchronizationPoints.Items[index] as SynchronizationPoint;
-                DAL.DeleteServerEntryPoint(selectedSyncPoint.Description);
-                Synchronization.DeleteFromServer(selectedSyncPoint.Server.Replace("/Upload", "/Delete"), selectedSyncPoint.Folder.Split('\\').Last());
-
-                ServerDGSynchronizationPoints.ItemsSource = DAL.GetServerEntryPoints();
-                ServerDGSynchronizationPoints.Items.Refresh();
-
-                //Check for favorites folder and deletes the related link
-                AddToFavorites_Check(sender, e);
-
-                Synchronization.RefreshWatcher();
+                InitializePopup();
+                PopupDelete.Visibility = Visibility.Visible;
+                PopupWindow.Visibility = Visibility.Visible;
             }
         }
 
@@ -619,7 +676,7 @@ namespace My_Sync
         {
             using (new Logger(sender, e))
             {
-                NotifyIcon.ShowWindow(false);
+                NotificationIcon.ShowWindow(false);
             }
         }
 
@@ -657,7 +714,7 @@ namespace My_Sync
         {
             using (new Logger(sender, e))
             {
-                NotifyIcon.SetVisibility(false);
+                NotificationIcon.SetVisibility(false);
             }
         }
 

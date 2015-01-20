@@ -13,11 +13,16 @@
     <system:String x:Key="german">Deutsch</system:String>
     <system:String x:Key="english">Englisch</system:String>
 
-    <!-- Contextmenu Items -->
+    <!-- Notification Icon -->
     <system:String x:Key="menuSynchronize">Starte Synchronisierung</system:String>
     <system:String x:Key="menuOpen">Synchronisierungsordner öffnen</system:String>
     <system:String x:Key="menuSettings">Einstellungen</system:String>
-    <system:String x:Key="menuClose">MySync beenden</system:String>
+    <system:String x:Key="menuClose">mySync beenden</system:String>
+    <system:String x:Key="iconTitle">mySync Benachrichtigung</system:String>
+    <system:String x:Key="iconDiskSpace">Der verfügbare Speicherplatz am Server von {0} Mb wurde erreicht.</system:String>
+    <system:String x:Key="iconFileSize">{0}: Die erlaubte Dateigröße ({1} Mb) wurde überschritten.</system:String>
+    <system:String x:Key="iconSyncFinish">Es wurde(n) {0} Datei(en) bzw. Ordner aktualisiert.</system:String>
+    <system:String x:Key="iconConflict">MySync beenden</system:String>
     
     <!-- Tabcontrol Items -->
     <system:String x:Key="tabGeneral">Allgemein</system:String>
@@ -42,6 +47,14 @@
     <system:String x:Key="generalIntervalMinutes">Minuten</system:String>
     <system:String x:Key="generalIntervalHours">Stunden</system:String>
 
+    <!-- Tab History -->
+    <system:String x:Key="historyFileUpdate">Die Datei '{0}' wurde am Server '{1}' aktualisiert.</system:String>
+    <system:String x:Key="historyFileDelete">Die Datei '{0}' wurde vom Server '{1}' gelöscht.</system:String>
+    <system:String x:Key="historyFileAdd">Die Datei '{0}' wurde auf den Server '{1}' geladen.</system:String>
+    <system:String x:Key="historyFolderUpdate">Der Ordner '{0}' wurde am Server '{1}' aktualisiert.</system:String>
+    <system:String x:Key="historyFolderDelete">Der Ordner '{0}' wurde vom Server '{1}' gelöscht.</system:String>
+    <system:String x:Key="historyFolderAdd">Der Ordner '{0}' wurde auf den Server '{1}' geladen.</system:String>
+    
     <!-- Tab Filter -->
     <system:String x:Key="filterDescription">Dateifilter Definition</system:String>
     <system:String x:Key="filterAdd">+</system:String>
@@ -61,4 +74,9 @@
     <system:String x:Key="serverPopupDescription">Beschreibung:</system:String>
     <system:String x:Key="serverPopupDirectory">Ordner:</system:String>
     <system:String x:Key="serverPopupServerAddress">Server Adresse:</system:String>
+
+    <system:String x:Key="serverPopupTitleDelete">Löschen eines Synchronisierungspunktes</system:String>
+    <system:String x:Key="serverPopupConfirm">Ja</system:String>
+    <system:String x:Key="serverPopupDeny">Nein</system:String>
+    <system:String x:Key="serverPopupConfirmationText">Wollen Sie alle zugehörigen Dateien und Ordner vom Server löschen?</system:String>
 </ResourceDictionary>

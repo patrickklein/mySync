@@ -134,13 +134,12 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Classes\CheckInternetConnection.cs" />
     <Compile Include="Classes\DAL.cs" />
     <Compile Include="Classes\FolderManagement.cs" />
     <Compile Include="Classes\Helper.cs" />
     <Compile Include="Classes\Logger.cs" />
     <Compile Include="Classes\MemoryManagement.cs" />
-    <Compile Include="Classes\NotifyIcon.cs" />
+    <Compile Include="Classes\NotificationIcon.cs" />
     <Compile Include="DataModel.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

@@ -333,7 +333,7 @@ namespace My_Sync.Classes
                     //get attributes for directory
                     if (new DirectoryInfo(fullName).Exists)
                     {
-                        
+
                         info = new DirectoryInfo(fullName);
                         int lastindex = info.FullName.TrimEnd('\\').LastIndexOf('\\');
                         this.FullPath = info.FullName.Substring(0, lastindex);
@@ -352,6 +352,10 @@ namespace My_Sync.Classes
                 catch (UnauthorizedAccessException ex)
                 {
                     MessageBox.Show(ex.ToString());
+                }
+                catch (NullReferenceException ex)
+                {
+                    //MessageBox.Show(ex.ToString());
                 }
 
                 return info;

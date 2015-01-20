@@ -15,17 +15,30 @@ using System.Windows.Threading;
 
 namespace My_Sync.Classes
 {
-    public static class NotifyIcon
+    public static class NotificationIcon
     {
         private static System.Windows.Forms.NotifyIcon notifyIcon;
         private static MainWindow mainWindow;
+        private static BallonNotifier notifier;
+
+        enum Notifier { FILESIZE, DISKSPACE, SYNC, CONFLICT };
+
+        struct BallonNotifier
+        {
+            public Notifier notifier;
+            public string message;
+            public string title;
+            public string filename;
+            public string path;
+            public ToolTipIcon icon;
+        }
 
         /// <summary>
         /// Initializes the notification icon and adds some menu entries to the contextmenu
         /// </summary>
-        public static void InitializeNotifyIcon(string iconName = "")
+        public static void InitializeNotifyIcon()
         {
-            using (new Logger(iconName))
+            using (new Logger())
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Normal, (ThreadStart)delegate
                 {
@@ -33,7 +46,6 @@ namespace My_Sync.Classes
                 });
 
                 ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
-                if (notifyIcon != null) notifyIcon.Dispose();
 
                 MenuItem menuItem0 = new MenuItem();
                 menuItem0.Index = 0;
@@ -59,15 +71,19 @@ namespace My_Sync.Classes
                 ContextMenu contextMenu = new ContextMenu();
                 contextMenu.MenuItems.AddRange(new MenuItem[] { menuItem0, menuItem1, menuItem2, menuItem3 });
 
-                notifyIcon = new System.Windows.Forms.NotifyIcon(new Container());
+                if (notifyIcon == null)
+                {
+                    notifyIcon = new System.Windows.Forms.NotifyIcon(new Container());
+                    notifyIcon.ContextMenu = contextMenu;
+                    notifyIcon.DoubleClick += new EventHandler(NotifyIcon_DoubleClick);
+                    notifyIcon.BalloonTipClicked += new EventHandler(NotifyIcon_BalloonTipClicked);
+                }
+
                 notifyIcon.Text = mainWindow.applicationName;
-                string uri = String.Format("/{0};component/Images/Icon/icon{1}.ico", Assembly.GetExecutingAssembly().GetName().Name, iconName);
+                string uri = String.Format("/{0};component/Images/Icon/icon.ico", Assembly.GetExecutingAssembly().GetName().Name);
                 Stream iconStream = System.Windows.Application.GetResourceStream(new Uri(uri, UriKind.Relative)).Stream;
                 notifyIcon.Icon = new Icon(iconStream);
                 notifyIcon.Visible = true;
-                notifyIcon.ContextMenu = contextMenu;
-                notifyIcon.DoubleClick += new EventHandler(NotifyIcon_DoubleClick);
-                notifyIcon.BalloonTipClicked += new EventHandler(NotifyIcon_BalloonTipClicked);
             }
         }
 
@@ -87,12 +103,14 @@ namespace My_Sync.Classes
         /// <summary>
         /// Changes the notification icon of the application to a new one
         /// </summary>
-        /// <param name="name">name of the icon without "icon" in front of it. Possible values are "", "Download" and "Upload"</param>
-        public static void ChangeIcon(string name)
+        /// <param name="iconName">name of the icon without "icon" in front of it. Possible values are "", "Download" and "Upload"</param>
+        public static void ChangeIcon(string iconName)
         {
-            using (new Logger(name))
+            using (new Logger(iconName))
             {
-                InitializeNotifyIcon(name);
+                string uri = String.Format("/{0};component/Images/Icon/icon{1}.ico", Assembly.GetExecutingAssembly().GetName().Name, iconName);
+                Stream iconStream = System.Windows.Application.GetResourceStream(new Uri(uri, UriKind.Relative)).Stream;
+                notifyIcon.Icon = new Icon(iconStream);
             }
         }
 
@@ -103,7 +121,9 @@ namespace My_Sync.Classes
         {
             using(new Logger()) 
             {
-                InitializeNotifyIcon();
+                string uri = String.Format("/{0};component/Images/Icon/icon.ico", Assembly.GetExecutingAssembly().GetName().Name);
+                Stream iconStream = System.Windows.Application.GetResourceStream(new Uri(uri, UriKind.Relative)).Stream;
+                notifyIcon.Icon = new Icon(iconStream);
             }
         }
 
@@ -153,6 +173,120 @@ namespace My_Sync.Classes
                 }
             }
         }
+
+        #region Balloon Tips
+
+        /// <summary>
+        /// Creates a balloon tip for a successfull synchronisation
+        /// </summary>
+        /// <param name="count">count of affected fils/folders</param>
+        public static void ItemsSynced(long count)
+        {
+            using (new Logger(count))
+            {
+                ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
+
+                BallonNotifier item = new BallonNotifier();
+                item.notifier = Notifier.SYNC;
+                item.message = String.Format(dict["iconSyncFinish"].ToString(), count);
+                item.icon = ToolTipIcon.Info;
+                item.title = dict["iconTitle"].ToString();
+
+                ShowNotification(item);
+            }
+        }
+
+        /// <summary>
+        /// Shows a balloon tip for a conflicted synchronisation
+        /// </summary>
+        /// <param name="path">path, where the error occurs</param>
+        /// <param name="errorMessage">related error message from the server</param>
+        public static void ErrorConflict(string path, string errorMessage)
+        {
+            using (new Logger(path, errorMessage))
+            {
+                ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
+                long size = Convert.ToInt64(errorMessage.Split('-').Last().Trim());
+
+                BallonNotifier item = new BallonNotifier();
+                item.notifier = Notifier.CONFLICT;
+                //item.message = String.Format(dict["iconDiskSpace"].ToString(), size / 1000 / 1024);
+                item.icon = ToolTipIcon.Warning;
+                item.path = path;
+                //item.filename = filename;
+                item.title = dict["iconTitle"].ToString();
+
+                ShowNotification(item);
+            }
+        }
+
+        /// <summary>
+        /// Shows a balloon tip for the defined disk space reached error of the server
+        /// </summary>
+        /// <param name="path">path, where the error occurs</param>
+        /// <param name="filename">error causing file</param>
+        /// <param name="errorMessage">related error message from the server</param>
+        public static void ErrorDiskSpace(string path, string filename, string errorMessage)
+        {
+            using (new Logger(path, filename, errorMessage))
+            {
+                ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
+                long size = Convert.ToInt64(errorMessage.Split('-').Last().Trim());
+
+                BallonNotifier item = new BallonNotifier();
+                item.notifier = Notifier.DISKSPACE;
+                item.message = String.Format(dict["iconDiskSpace"].ToString(), size / 1000 / 1024);
+                item.icon = ToolTipIcon.Warning;
+                item.path = path;
+                item.filename = filename;
+                item.title = dict["iconTitle"].ToString();
+
+                ShowNotification(item);
+            }
+        }
+
+        /// <summary>
+        /// Shows a balloon tip for the file size is too big error of the server
+        /// </summary>
+        /// <param name="path">path, where the error occurs</param>
+        /// <param name="filename">error causing file</param>
+        /// <param name="errorMessage">related error message from the server</param>
+        public static void ErrorFileSize(string path, string filename, string errorMessage)
+        {
+            using (new Logger(path, filename, errorMessage))
+            {
+                ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
+                long size = Convert.ToInt64(errorMessage.Split('-').Last().Trim());
+                
+                BallonNotifier item = new BallonNotifier();
+                item.notifier = Notifier.FILESIZE;
+                item.message = String.Format(dict["iconFileSize"].ToString(), filename, size / 1000 / 1024);
+                item.icon = ToolTipIcon.Warning;
+                item.path = path;
+                item.filename = filename;
+                item.title = dict["iconTitle"].ToString();
+
+                ShowNotification(item);
+            }
+        }
+
+        /// <summary>
+        /// Method for showing the defined balloon tip
+        /// </summary>
+        /// <param name="notifyItem">item for designing the balloon tip</param>
+        private static void ShowNotification(BallonNotifier notifyItem)
+        {
+            using (new Logger(notifyItem))
+            {
+                if (UserPreferences.showNotification)
+                {
+                    notifier = notifyItem;
+                    notifyIcon.ShowBalloonTip(0, notifyItem.title, notifyItem.message, notifyItem.icon);
+                }
+            }
+        }
+
+        #endregion
 
         #region Eventhandler
 
@@ -234,13 +368,26 @@ namespace My_Sync.Classes
         {
             using (new Logger(sender, e))
             {
-                /*if (ballonNotifier == 1)
+                string args = (!String.IsNullOrEmpty(notifier.path) && !String.IsNullOrEmpty(notifier.filename)) 
+                                ? String.Format("/select,\"{0}\"", Path.Combine(notifier.path, notifier.filename)) 
+                                : "";
+
+                switch (notifier.notifier)
                 {
-                    //Noten_tab.Focus();
-                    NotifyIconOpen_Click(null, null);
+                    case Notifier.FILESIZE: 
+                        if (Directory.Exists(notifier.path))
+                            Process.Start("explorer.exe", args);
+                        break;
+                    case Notifier.DISKSPACE: 
+                        if (Directory.Exists(notifier.path))
+                            Process.Start("explorer.exe", args);
+                        break;
+                    case Notifier.CONFLICT: 
+                        if (Directory.Exists(notifier.path))
+                            Process.Start("explorer.exe", notifier.path);
+                        break;
+                    case Notifier.SYNC: break;
                 }
-                else if (ballonNotifier == 2 && fileText.Trim() != null) MessageBox.Show(fileText);
-                */
             }
         }
 

@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace My_Sync.Classes
 {
@@ -235,20 +236,11 @@ namespace My_Sync.Classes
             using (new Logger(name, historyFlag, isFolder, serverDescription))
             {
                 History newEntry = new History();
-
-                string historyEvent = "";
-                switch(historyFlag) {
-                    case "u": historyEvent = "updated on"; break;
-                    case "n": historyEvent = "sent to"; break;
-                    case "d": historyEvent = "deleted from"; break;
-                }
-
-                newEntry.timestamp = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"); 
-                newEntry.entry = String.Format("{0} '{1}' {2} server '{3}'.", 
-                                               (isFolder) ? "Folder" : "File", 
-                                               name, 
-                                               historyEvent,
-                                               serverDescription);
+                newEntry.eventType = historyFlag;
+                newEntry.timestamp = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+                newEntry.isFolder = Convert.ToDecimal(isFolder);
+                newEntry.fileName = name;
+                newEntry.serverName = serverDescription;
                 
                 AddHistory(newEntry);
             }
@@ -266,11 +258,31 @@ namespace My_Sync.Classes
                 string history = "";
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
+                    MainWindow mainWindow = null;
 
+                    System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Normal, (ThreadStart)delegate
+                    {
+                        mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
+                    });
+
+                    ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
                     List<History> entries = dbInstance.History.OrderByDescending(x => x.timestamp).Take(showItems).ToList();
-                    foreach (History entry in entries)
-                        history += String.Format("[{0:dd/MM/yyyy HH:mm}]: {1}\r", DateTime.ParseExact(entry.timestamp, "yyyy/MM/dd HH:mm:ss", null), entry.entry);
 
+                    foreach (History entry in entries)
+                    {
+                        string historyEvent = "";
+                        string helper = (Convert.ToBoolean(entry.isFolder)) ? "Folder" : "File";
+
+                        switch (entry.eventType)
+                        {
+                            case "u": historyEvent = dict["history" + helper + "Update"].ToString(); break;
+                            case "n": historyEvent = dict["history" + helper + "Add"].ToString(); break;
+                            case "d": historyEvent = dict["history" + helper + "Delete"].ToString(); break;
+                        }
+
+                        string message = String.Format(historyEvent, entry.fileName, entry.serverName);
+                        history += String.Format("[{0:dd/MM/yyyy HH:mm}]: {1}\r", DateTime.ParseExact(entry.timestamp, "yyyy/MM/dd HH:mm:ss", null), message);
+                    }
                     return history;
                 }
             }
@@ -289,23 +301,6 @@ namespace My_Sync.Classes
                     int count = dbInstance.History.ToList().Count;
                     if (count == 0) return count;
                     return dbInstance.History.OrderBy(x => x.id).ToList().Last().id + 1;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Deletes the history entry from the database with the given entry value
-        /// </summary>
-        /// <param name="entry">entry to delete from the database</param>
-        public static void DeleteHistory(string entry) 
-        {
-            using(new Logger(entry)) 
-            {
-                using (MySyncEntities dbInstance = new MySyncEntities())
-                {
-                    History historyToDelete = dbInstance.History.Single(x => x.entry.Equals(entry));
-                    dbInstance.History.Remove(historyToDelete);
-                    dbInstance.SaveChanges();
                 }
             }
         }
@@ -651,11 +646,16 @@ namespace My_Sync.Classes
             {
                 using (MySyncEntities dbInstance = new MySyncEntities())
                 {
-                    SynchronizationItem item = dbInstance.SynchronizationItem.ToList().Single(x => x.id == changedItem.id);
-                    dbInstance.SynchronizationItem.Remove(item);
-                    dbInstance.SynchronizationItem.Add(changedItem);
+                    List<SynchronizationItem> itemList = dbInstance.SynchronizationItem.ToList();
 
-                    dbInstance.SaveChanges();
+                    if (itemList.Where(x => x.id == changedItem.id).Count() != 0)
+                    {
+                        SynchronizationItem item = itemList.Single(x => x.id == changedItem.id);
+                        dbInstance.SynchronizationItem.Remove(item);
+                        dbInstance.SynchronizationItem.Add(changedItem);
+
+                        dbInstance.SaveChanges();
+                    }
                 }
             }
         }

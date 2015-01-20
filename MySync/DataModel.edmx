@@ -25,7 +25,10 @@
           </Key>
           <Property Name="id" Type="integer" Nullable="false" />
           <Property Name="timestamp" Type="nvarchar" />
-          <Property Name="entry" Type="nvarchar" />
+          <Property Name="eventType" Type="nvarchar" />
+          <Property Name="isFolder" Type="decimal" Precision="53" />
+          <Property Name="serverName" Type="nvarchar" />
+          <Property Name="fileName" Type="nvarchar" />
         </EntityType>
         <EntityType Name="ServerEntryPoint">
           <Key>
@@ -88,7 +91,10 @@
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
           <Property Name="timestamp" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
-          <Property Name="entry" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="eventType" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="isFolder" Type="Decimal" Precision="53" Scale="0" />
+          <Property Name="serverName" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="fileName" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
         <EntityType Name="ServerEntryPoint">
           <Key>
@@ -145,7 +151,10 @@
               <MappingFragment StoreEntitySet="History">
                 <ScalarProperty Name="id" ColumnName="id" />
                 <ScalarProperty Name="timestamp" ColumnName="timestamp" />
-                <ScalarProperty Name="entry" ColumnName="entry" />
+                <ScalarProperty Name="eventType" ColumnName="eventType" />
+                <ScalarProperty Name="isFolder" ColumnName="isFolder" />
+                <ScalarProperty Name="serverName" ColumnName="serverName" />
+                <ScalarProperty Name="fileName" ColumnName="fileName" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

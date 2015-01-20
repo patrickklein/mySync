@@ -4,11 +4,11 @@
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
-      <Diagram DiagramId="eec81cdfad2944efb0dea5d9bc2b0ec5" Name="Diagram1">
+      <Diagram DiagramId="f93fc94cc94845ce840be2102d08fe20" Name="Diagram1">
         <EntityTypeShape EntityType="MySyncModel.FileFilter" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="MySyncModel.History" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="MySyncModel.ServerEntryPoint" Width="1.75" PointX="9.25" PointY="0.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="MySyncModel.SynchronizationItem" Width="1.75" PointX="7" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="MySyncModel.ServerEntryPoint" Width="1.625" PointX="7" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="MySyncModel.SynchronizationItem" Width="1.875" PointX="9.125" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="MySyncModel.ToSync" Width="1.75" PointX="4.75" PointY="0.75" IsExpanded="true" />
       </Diagram>
     </edmx:Diagrams>

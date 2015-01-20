@@ -13,11 +13,16 @@
     <system:String x:Key="german">German</system:String>
     <system:String x:Key="english">English</system:String>
 
-    <!-- Contextmenu Items -->
+    <!-- Notification Icon -->
     <system:String x:Key="menuSynchronize">Start synchronization</system:String>
     <system:String x:Key="menuOpen">Open synchronization folder</system:String>
     <system:String x:Key="menuSettings">Preferences</system:String>
-    <system:String x:Key="menuClose">Close MySync</system:String>
+    <system:String x:Key="menuClose">Close mySync</system:String>
+    <system:String x:Key="iconTitle">mySync notification</system:String>
+    <system:String x:Key="iconDiskSpace">The reserved disk space on the server got reached ({0} Mb).</system:String>
+    <system:String x:Key="iconFileSize">{0}: The filesize is bigger than allowed ({1} Mb).</system:String>
+    <system:String x:Key="iconSyncFinish">{0} file(s)/folder(s) got synchronized</system:String>
+    <system:String x:Key="iconConflict">MySync beenden</system:String>
     
     <!-- Tabcontrol Items -->
     <system:String x:Key="tabGeneral">General</system:String>
@@ -41,6 +46,14 @@
     <system:String x:Key="generalInterval">Interval:</system:String>
     <system:String x:Key="generalIntervalMinutes">minutes</system:String>
     <system:String x:Key="generalIntervalHours">hours</system:String>
+
+    <!-- Tab History -->
+    <system:String x:Key="historyFileUpdate">File '{0}' updated on server '{1}'.</system:String>
+    <system:String x:Key="historyFileDelete">File '{0}' deleted from server '{1}'.</system:String>
+    <system:String x:Key="historyFileAdd">File '{0}' sent to server '{1}'.</system:String>
+    <system:String x:Key="historyFolderUpdate">Folder '{0}' updated on server '{1}'.</system:String>
+    <system:String x:Key="historyFolderDelete">Folder '{0}' deleted from server '{1}'.</system:String>
+    <system:String x:Key="historyFolderAdd">File '{0}' sent to server '{1}'.</system:String>
     
     <!-- Tab Filter -->
     <system:String x:Key="filterDescription">Definition of file filters</system:String>
@@ -61,4 +74,9 @@
     <system:String x:Key="serverPopupDescription">Description:</system:String>
     <system:String x:Key="serverPopupDirectory">Directory:</system:String>
     <system:String x:Key="serverPopupServerAddress">Server Address:</system:String>
+
+    <system:String x:Key="serverPopupTitleDelete">Delete an existing synchronization point</system:String>
+    <system:String x:Key="serverPopupConfirm">Yes</system:String>
+    <system:String x:Key="serverPopupDeny">No</system:String>
+    <system:String x:Key="serverPopupConfirmationText">Do you want to delete all related files and folders from the server?</system:String>
 </ResourceDictionary>

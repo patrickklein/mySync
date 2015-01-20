@@ -253,9 +253,9 @@
                         </Grid>
                     </TabItem>
                 </TabControl>
-                <!-- Popup Window -->
-                <StackPanel Visibility="Collapsed" Name="PopupWindow" Width="{Binding ElementName=mainWindow, Path=ActualWidth}" Height="{Binding ElementName=mainWindow, Path=ActualHeight}" Background="#97141414" Panel.ZIndex="1">
-                    <Border BorderBrush="Black" Margin="0,25,0,0" BorderThickness="2" Background="Black" Width="300">
+                <!-- Popup Window Server entry point -->
+                <StackPanel Visibility="Visible" Name="PopupWindow" Width="{Binding ElementName=mainWindow, Path=ActualWidth}" Height="{Binding ElementName=mainWindow, Path=ActualHeight}" Background="#97141414" Panel.ZIndex="1">
+                    <Border x:Name="PopupAdd" Visibility="Collapsed" BorderBrush="Black" Margin="0,25,0,0" BorderThickness="2" Background="Black" Width="300">
                         <StackPanel Background="White" VerticalAlignment="Center" Height="300">
                             <Grid Margin="10">
                                 <Grid.RowDefinitions>
@@ -290,6 +290,30 @@
                                 <Button    Grid.Row="4" Margin="0,2" Width="20" HorizontalAlignment="Right" Click="PopupDirButton_Click">...</Button>
 
                                 <Button Grid.Row="5" Margin="30,30,30,0" VerticalAlignment="Center" Height="22" Click="CreateNewServerEntryPoint_Click" Content="{DynamicResource serverPopupCreateButton}" />
+                                <Button Margin="0,1,0,20" HorizontalAlignment="Right" Width="20" Click="ClosePopup_Click">
+                                    <Path Width="8" Height="7" Fill="Black" Data="M 1,1 C1,1 1,2 1,2 1,2 2,2 2,2 2,2 2,3 2,3 2,3 3,3 3,3 3,3 3,4 3,4 3,4 2,4 2,4 2,4 2,5 2,5 2,5 1,5 1,5 1,5 1,6 1,6 1,6 0,6 0,6 0,6 0,7 0,7 0,7 2,7 2,7 2,7 2,6 2,6 2,6 3,6 3,6 3,6 3,5 3,5 3,5 4,5 4,5 4,5 5,5 5,5 5,5 5,6 5,6 5,6 6,6 6,6 6,6 6,7 6,7 6,7 8,7 8,7 8,7 8,6 8,6 8,6 7,6 7,6 7,6 7,5 7,5 7,5 6,5 6,5 6,5 6,4 6,4 6,4 5,4 5,4 5,4 5,3 5,3 5,3 6,3 6,3 6,3 6,2 6,2 6,2 7,2 7,2 7,2 7,1 7,1 7,1 8,1 8,1 8,1 8,0 8,0 8,0 6,0 6,0 6,0 6,1 6,1 6,1 5,1 5,1 5,1 5,2 5,2 5,2 4,2 4,2 4,2 3,2 3,2 3,2 3,1 3,1 3,1 2,1 2,1 2,1 2,0 2,0 2,0 0,0 0,0 0,0 0,1 0,1 0,1 1,1 1,1 z"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="PopupDelete" BorderBrush="Black" Margin="0,100,0,0" BorderThickness="2" Background="Black" Width="300">
+                        <StackPanel Background="White" VerticalAlignment="Center" Height="140">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="276"/>
+                                    <ColumnDefinition Width="0*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Name="PopupTitleDelete" TextWrapping="Wrap" Text="{DynamicResource serverPopupTitleDelete}" Margin="2,3,0,22" VerticalAlignment="Center" FontWeight="Bold" Height="16" />
+                                <Rectangle HorizontalAlignment="Stretch" Fill="Black" Height="1" Margin="0,16,0,0"/>
+                                <TextBlock Grid.Row="1" Margin="2,-25,2,5" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50" Width="250" Text="{DynamicResource serverPopupConfirmationText}" Name="PopupTBLConfirmationText" TextWrapping="Wrap" />
+                                <Button Grid.Row="2" Margin="30,50,150,0" VerticalAlignment="Center" Height="22" Click="ServerEntryPointConfirm_Click" Content="{DynamicResource serverPopupConfirm}" />
+                                <Button Grid.Row="2" Margin="150,50,30,0" VerticalAlignment="Center" Height="22" Click="ServerEntryPointDeny_Click" Content="{DynamicResource serverPopupDeny}" />
+
                                 <Button Margin="0,1,0,20" HorizontalAlignment="Right" Width="20" Click="ClosePopup_Click">
                                     <Path Width="8" Height="7" Fill="Black" Data="M 1,1 C1,1 1,2 1,2 1,2 2,2 2,2 2,2 2,3 2,3 2,3 3,3 3,3 3,3 3,4 3,4 3,4 2,4 2,4 2,4 2,5 2,5 2,5 1,5 1,5 1,5 1,6 1,6 1,6 0,6 0,6 0,6 0,7 0,7 0,7 2,7 2,7 2,7 2,6 2,6 2,6 3,6 3,6 3,6 3,5 3,5 3,5 4,5 4,5 4,5 5,5 5,5 5,5 5,6 5,6 5,6 6,6 6,6 6,6 6,7 6,7 6,7 8,7 8,7 8,7 8,6 8,6 8,6 7,6 7,6 7,6 7,5 7,5 7,5 6,5 6,5 6,5 6,4 6,4 6,4 5,4 5,4 5,4 5,3 5,3 5,3 6,3 6,3 6,3 6,2 6,2 6,2 7,2 7,2 7,2 7,1 7,1 7,1 8,1 8,1 8,1 8,0 8,0 8,0 6,0 6,0 6,0 6,1 6,1 6,1 5,1 5,1 5,1 5,2 5,2 5,2 4,2 4,2 4,2 3,2 3,2 3,2 3,1 3,1 3,1 2,1 2,1 2,1 2,0 2,0 2,0 0,0 0,0 0,0 0,1 0,1 0,1 1,1 1,1 z"/>
                                 </Button>
