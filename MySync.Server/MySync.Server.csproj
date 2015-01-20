@@ -197,7 +197,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Configuration\Configuration.hbm.xml" />
+    <EmbeddedResource Include="Configuration\configuration.hbm.xml" />
     <EmbeddedResource Include="Configuration\SynchronisationItem.hbm.xml" />
     <Content Include="Content\site.css" />
     <Content Include="Content\themes\base\images\ui-bg_flat_0_aaaaaa_40x100.png" />
