@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="MySync.Server" namespace="MySync.Server.DAL">
 
-  <class name="Configuration" table="configuration">
+  <class name="Configuration" table="configuration2">
     <id name="Id" column="id" type="Int64">
       <generator class="sequence">
         <param name="sequence">configuration_id_seq</param>

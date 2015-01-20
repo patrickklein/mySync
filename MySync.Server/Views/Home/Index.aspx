@@ -24,7 +24,7 @@
 
         <li class="two">
             <h5>setup an entry point</h5>
-            Go to the <%: Html.ActionLink("setup section", "Setup", "Account") %> and set up a new server entry point for the client application, by providing a valid path as data storage. The created server entry point is now available with the following URI: <b>http://xxx.xxx.xxx.xxx/synchronization/entryPoint</b>
+            Go to the <%: Html.ActionLink("setup section", "Setup", "Account") %> and set up a new server entry point for the client application, by providing a valid path as data storage. The created server entry point is now available with the following URI: <b>http://xxx.xxx.xxx.xxx/Account/Upload</b>
         </li>
 
         <li class="three">

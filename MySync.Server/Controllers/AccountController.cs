@@ -319,7 +319,7 @@ namespace MySync.Server.Controllers
 
                 if (item != null)
                 {
-                    if (!item.IsFolder)
+                    if (!item.IsFolder && new FileInfo(item.Path).Exists)
                     {
                         Response.AddHeader("Content-Disposition", "attachment; filename=" + item.Fullname);
                         Response.ContentType = "application/octet-stream";
