@@ -31,15 +31,15 @@
             <span class="label">Under the following terms:</span><br />
             <table style="margin-left:10px;">
                 <tr>
-                    <td><img src="/Images/license/Attribution.png" /></td>
+                    <td><img src="<%: Url.Content("~/Images/license/Attribution.png") %>" /></td>
                     <td><b>Attribution</b> - You must give <b><u>appropriate credit</u></b>, provide a link to the license, and <b><u>indicate if changes were made</u></b>. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.</td>
                 </tr>
                 <tr>
-                    <td><img src="/Images/license/NonCommercial.png" /></td>
+                    <td><img src="<%: Url.Content("~/Images/license/NonCommercial.png") %>" /></td>
                     <td><b>NonCommercial</b> - You may <b><u>not</u></b> use the material for <b><u>commercial purposes</u></b>.</td>
                 </tr>
                 <tr>
-                    <td><img src="/Images/license/ShareAlike.png" /></td>
+                    <td><img src="<%: Url.Content("~/Images/license/ShareAlike.png") %>" /></td>
                     <td><b>ShareAlike</b> - If you remix, transform, or build upon the material, you must distribute your contributions under the <b><u>same license</u></b> as the original.</td>
                 </tr>
             </table>
@@ -47,7 +47,7 @@
             <span><b>No additional restrictions</b> - You may not apply legal terms or <b><u>technological measures</u></b> that legally restrict others from doing anything the license permits.</span>
             
             <br /><br />
-            <img alt="Creative Commons License" style="border-width:0" src="/Images/license/license.png" /> 
+            <img alt="Creative Commons License" style="border-width:0" src="<%: Url.Content("~/Images/license/license.png") %>" /> 
         </p>
     </section>
     <br /><br />

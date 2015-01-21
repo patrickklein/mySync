@@ -15,7 +15,7 @@
                 <div class="float-left">
                     <div class="site-title">
                         <a href="<%: Url.Action("Index", "Home") %>">
-                            <img style="margin-top:14px;margin-left:-2px" height="50" src="/Images/logo.png" />&nbsp;&nbsp;
+                            <img style="margin-top:14px;margin-left:-2px" height="50" src="<%: Url.Content("~/Images/logo.png") %>" />&nbsp;&nbsp;
                             <span style="font-family:Dosis;font-size:36pt;color:#fff;vertical-align:top">mySync - Server Management</span>
                         </a>
                     </div>
