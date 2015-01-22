@@ -38,13 +38,17 @@
                     <td></td>
                     <td style="font-size:10pt;">* max value defined in Web.config</td>
                 </tr>
+                <tr><td></td></tr>
+                <tr><td></td></tr>
+                <tr><td></td></tr>
+                <tr>
+                    <td><b>Entry Point URL for client:</b></td>
+                    <td><%: ViewBag.SyncURL %></td>
+                </tr>
             </table>
         <br />
             <input type="submit" value="Save" />
         <% } %>
-
-        <br />
-        <span><%: ViewBag.SyncURL %></span>
     </section>
 </asp:Content>
 

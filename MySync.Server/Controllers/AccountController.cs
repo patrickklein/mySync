@@ -69,7 +69,7 @@ namespace MySync.Server.Controllers
                 string ipHost = Dns.GetHostName();
                 string ip = Dns.GetHostByName(ipHost).AddressList[0].ToString();
                 int port = Request.Url.Port;
-                ViewBag.SyncURL = String.Format("http://{0}:{1}/Account/Upload", ip, port);
+                ViewBag.SyncURL = String.Format("http://{0}:{1}{2}", ip, port, Request.Url.LocalPath.Replace("Setup", "Upload"));
 
                 return View(model);
             }
