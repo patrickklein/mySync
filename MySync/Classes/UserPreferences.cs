@@ -25,7 +25,7 @@ namespace My_Sync.Classes
 
         #region Getter / Setter
 
-        public static bool RunAtStartup
+        public bool RunAtStartup
         {
             get { return UserPreferences.runAtStartup; }
             set { UserPreferences.runAtStartup = value; }

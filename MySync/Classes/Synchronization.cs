@@ -23,8 +23,9 @@ namespace My_Sync.Classes
         private static List<string> ignoreFromWatching = new List<string>();
         private static System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         private static bool sync = false;
-        private static long countSyncedItems = 0;
+        private static long countSyncedItems = 0, countConflictedItems = 0, countDeletedItems = 0;
         private static string timeFormat = "yyyy/MM/dd HH:mm:ss";
+        private static string conflict = "conflictedServer";
 
         #region Synchronization
 
@@ -43,33 +44,60 @@ namespace My_Sync.Classes
                     mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
                 });
 
+                //Clear all counters and lists
+                countSyncedItems = 0;
+                countConflictedItems = 0;
+                countDeletedItems = 0;
+
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 try
                 {
                     //Check if items on the filesystem and the databases matches together
                     CheckForDifferencies();
-                    countSyncedItems = 0;
 
+                    //Download methods for getting files/folder from server and clear the client filespace
                     foreach (SynchronizationPoint syncPoint in mainWindow.ServerDGSynchronizationPoints.Items)
                     {
-                        ServerEntryPoint point = DAL.GetServerEntryPoint(syncPoint.Description);
-                        List<SynchronizationItem> serverList = Synchronization.GetListFromServer(point.serverurl.Replace("/Upload", "/GetList"), point.id);
+                        try
+                        {
+                            ServerEntryPoint point = DAL.GetServerEntryPoint(syncPoint.Description);
+                            List<SynchronizationItem> serverList = Synchronization.GetListFromServer(point.serverurl.Replace("/Upload", "/GetList"), point.id);
 
-                        //Download files from server, if something changed
-                        DownloadItemsFromServer(serverList, point);
+                            //Download files from server, if something changed
+                            DownloadItemsFromServer(serverList, point);
 
-                        //Delete files/folders if they don't exist on the server anymore
-                        NotificationIcon.ResetIcon();
-                        DeleteItemsOnClient(serverList, point);
+                            //Delete files/folders if they don't exist on the server anymore
+                            NotificationIcon.ResetIcon();
+                            DeleteItemsOnClient(serverList, point);
 
-                        //Clear ToSync table
-                        ClearToSyncTable(serverList, point);
+                            //Clear ToSync table
+                            ClearToSyncTable(serverList, point);
+                        }
+                        catch (Exception ex) 
+                        {
+                            new Logger().Log(String.Format("Error for synchronisation point '{0}' -> {1} -> {2}", syncPoint.Description, ex.Message.ToString(), (ex.InnerException).InnerException));
+                        }
                     }
 
-                    //Send files/folders to the server, or deletes them
-                    NotificationIcon.ChangeIcon("Upload");
-                    UploadItemsToServer();
+                    //Show notification
+                    if (countConflictedItems > 0)
+                        NotificationIcon.ErrorConflict(countConflictedItems);
+
+                    //Upload methods for uploading files/folder to the server
+                    foreach (SynchronizationPoint syncPoint in mainWindow.ServerDGSynchronizationPoints.Items)
+                    {
+                        try
+                        {
+                            //Send files/folders to the server, or deletes them
+                            NotificationIcon.ChangeIcon("Upload");
+                            UploadItemsToServer(syncPoint);
+                        }
+                        catch (Exception ex)
+                        {
+                            new Logger().Log("Error for synchronisation point '" + syncPoint.Description + "' -> " + ex.Message.ToString());
+                        }
+                    }
 
                     //Show notification
                     if (countSyncedItems > 0) 
@@ -112,6 +140,7 @@ namespace My_Sync.Classes
                     {
                         NotificationIcon.ChangeIcon("Download");
                         string itemPath = "";
+                        Task<string> syncedAt = null;
 
                         //Create new file or folder
                         if (Convert.ToBoolean(serverItem.isFolder))
@@ -130,40 +159,64 @@ namespace My_Sync.Classes
                         else
                         {
                             string savingPath = Path.Combine(point.folderpath.Replace(point.folderpath.Split('\\').Last(), ""), serverItem.path);
-                            DownloadFile(point.serverurl.Replace("/Upload", "/Download"), false, serverItem.path, savingPath, serverItem.fullname);
+                            syncedAt = DownloadFile(point.serverurl.Replace("/Upload", "/Download"), false, serverItem.path, savingPath, serverItem.fullname);
                             itemPath = Path.Combine(savingPath, serverItem.fullname);
                         }
 
                         //Add new file/folder to database
                         ItemInfo newItem = new ItemInfo();
                         newItem.GetInfo(itemPath);
+                        string syncTime = (syncedAt != null) ? syncedAt.Result : "";
                         if (!newItem.IsFolder && GetFiltered(newItem.FullName)) continue;
-                        AddToDatabase(newItem, point.description);
+                        AddToDatabase(newItem, point.description, syncTime);
 
                         countSyncedItems++;
                     }
                     else
                     {
+                        //if the item already exists on the client -> check if equal for updating the item
                         bool isEqual = CheckSynchronizationItemIsEqual(item, serverItem);
-                        if (!isEqual && !Convert.ToBoolean(item.isFolder))
+                        if ((!isEqual || item.lastSyncTime != serverItem.lastSyncTime) && !Convert.ToBoolean(item.isFolder))
                         {
                             NotificationIcon.ChangeIcon("Download");
                             string conflictedFilename = "";
+                            Task<string> syncedAt = null;
 
-                            //check if it is in ToSync table. if so there is a file conflict
+                            DateTime clientWrite = Convert.ToDateTime(item.lastWriteTime);
+                            DateTime serverWrite = Convert.ToDateTime(serverItem.lastWriteTime);
+                            DateTime clientSync = Convert.ToDateTime(item.lastSyncTime);
+                            DateTime serverSync = Convert.ToDateTime(serverItem.lastSyncTime);
                             bool toSyncExists = DAL.ToSyncExists(item.id);
-                            if (toSyncExists)
+
+                            //Skip if item was changed on the client and no synchronisation was done by another client (changed item should get uploaded)
+                            if (item.lastSyncTime == serverItem.lastSyncTime && toSyncExists) continue;
+
+                            if(clientWrite > clientSync && clientSync < serverSync)
                             {
-                                conflictedFilename = string.Format("{0}.conflictedServer{1}", item.name, item.extension);
+                                conflictedFilename = string.Format("{0}.{1}{2}", item.name, conflict, item.extension);
                                 conflicted.Add(item);
+
+                                countConflictedItems++;
                             }
 
                             string syncRootToFolder = Path.Combine(point.folderpath.Split('\\').Last(), item.path.Replace(point.folderpath, "").Trim('\\'));
-                            DownloadFile(point.serverurl.Replace("/Upload", "/Download"), true, syncRootToFolder, item.path, item.fullname, conflictedFilename);
+                            syncedAt = DownloadFile(point.serverurl.Replace("/Upload", "/Download"), true, syncRootToFolder, item.path, item.fullname, conflictedFilename);
 
-                            countSyncedItems++;
+                            ItemInfo newItem = new ItemInfo();
+                            newItem.GetInfo(Path.Combine(item.path, item.fullname));
+                            item = ItemInfoToSyncItem(newItem, item);
+                            item.lastSyncTime = (syncedAt != null) ? syncedAt.Result : "";
+                            DAL.UpdateSynchronizationItem(item);
+                        }
+                        else if ((!isEqual || item.lastSyncTime != serverItem.lastSyncTime) && Convert.ToBoolean(item.isFolder))
+                        {
+                            serverItem.id = item.id;
+                            serverItem.path = item.path;
+                            DAL.UpdateSynchronizationItem(serverItem);
                         }
                     }
+
+                    RefreshHistoryEntries();
                 }
 
                 MemoryManagement.Reduce();
@@ -174,15 +227,23 @@ namespace My_Sync.Classes
         /// <summary>
         /// Gets all ToSync items from the database and start to transfer the data/changes to the related server
         /// </summary>
-        private static void UploadItemsToServer()
+        /// <param name="syncPoint">do updates for the given synchronization point</param>
+        private static void UploadItemsToServer(SynchronizationPoint syncPoint)
         {
-            using (new Logger())
+            using (new Logger(syncPoint))
             {
-                while (true)
+                ServerEntryPoint point = DAL.GetServerEntryPoint(syncPoint.Description);
+                List<ToSync> list = DAL.GetToSync(point.id);
+
+                foreach (ToSync toSyncItem in list)
                 {
-                    ToSync toSyncItem = DAL.GetNextToSync();
                     if (toSyncItem == null) break;
 
+                    //Check if file is in a conflict (if yes, skip)
+                    SynchronizationItem syncItem = DAL.GetSynchronizationItem(Convert.ToInt64(toSyncItem.synchronizationItemId));
+                    string conflictedFilename = Path.Combine(syncItem.path, String.Format("{0}.{1}{2}", syncItem.name, conflict, syncItem.extension));
+                    if (new FileInfo(conflictedFilename).Exists) continue;
+          
                     SynchronizationItem item = DAL.GetSynchronizationItem((long)toSyncItem.synchronizationItemId);
                     if (item == null)
                     {
@@ -191,7 +252,7 @@ namespace My_Sync.Classes
                     }
 
                     ServerEntryPoint entryPoint = DAL.GetServerEntryPoint((long)item.serverEntryPointId);
-
+                    
                     if (toSyncItem.syncType == "d")
                     {
                         string folder = Path.Combine(entryPoint.folderpath.Split('\\').Last(), item.path.Replace(entryPoint.folderpath, "").Trim('\\'));
@@ -277,6 +338,7 @@ namespace My_Sync.Classes
                             }
                         }
                     }
+                    RefreshHistoryEntries();
                 }
 
                 MemoryManagement.Reduce();
@@ -552,7 +614,8 @@ namespace My_Sync.Classes
         /// <param name="savingPath">saving path for the new file</param>
         /// <param name="fullName">filename to download from server</param>
         /// <param name="conflictedFilename">filename to rename the file is it conflicts</param>
-        private static async void DownloadFile(string requestUri, bool ignore, string rootFolder, string savingPath, string fullName, string conflictedFilename = "")
+        /// <returns>returns the lastSyncTime value if available</returns>
+        private static async Task<string> DownloadFile(string requestUri, bool ignore, string rootFolder, string savingPath, string fullName, string conflictedFilename = "")
         {
             using (new Logger(requestUri, ignore, rootFolder, savingPath, fullName, conflictedFilename))
             {
@@ -566,7 +629,7 @@ namespace My_Sync.Classes
                         try
                         {
                             HttpResponseMessage responseMessage = client.PostAsync(requestUri, content).Result;
-                            if (responseMessage.StatusCode != HttpStatusCode.OK) return;
+                            if (responseMessage.StatusCode != HttpStatusCode.OK) return "";
 
                             string fileName = (String.IsNullOrEmpty(conflictedFilename)) ? HttpUtility.UrlDecode(((string[])responseMessage.Headers.GetValues("Fullname"))[0]) : conflictedFilename;
                             string fileNameTmp = fileName + ".tmp";
@@ -582,7 +645,6 @@ namespace My_Sync.Classes
                             }
                             else
                             {
-
                                 if (!Directory.Exists(savingPath)) Directory.CreateDirectory(savingPath);
                                 using (var fileStream = File.Create(Path.Combine(savingPath, fileNameTmp)))
                                 {
@@ -593,7 +655,7 @@ namespace My_Sync.Classes
                                     }
                                 }
 
-                                //delete old file and rename the temp file to his original name
+                                //delete old file and rename the temp file to its original name
                                 File.Delete(fileWithPath);
                                 File.Move(Path.Combine(savingPath, fileNameTmp), Path.Combine(savingPath, fileName));
                             }
@@ -601,6 +663,8 @@ namespace My_Sync.Classes
                             Directory.SetLastAccessTime(fileWithPath, Convert.ToDateTime(((string[])responseMessage.Headers.GetValues("LastAccessTime"))[0]));
                             Directory.SetLastWriteTime(fileWithPath, Convert.ToDateTime(((string[])responseMessage.Headers.GetValues("LastWriteTime"))[0]));
                             Directory.SetCreationTime(fileWithPath, Convert.ToDateTime(((string[])responseMessage.Headers.GetValues("CreationTime"))[0]));
+
+                            return ((string[])responseMessage.Headers.GetValues("LastSyncTime"))[0];
                         }
                         catch (Exception ex) { throw ex; }
                     }
@@ -623,7 +687,7 @@ namespace My_Sync.Classes
                 MainWindow mainWindow = ((MainWindow)System.Windows.Application.Current.MainWindow);
                 string selectedTime = ((ContentControl)(mainWindow.GeneralCBInterval.SelectedItem)).Uid.ToString();
                 timer.Interval = Convert.ToInt32(selectedTime) * 60 * 1000;
-                //timer.Interval = 5000;
+                timer.Interval = 15000;
                 timer.Tick += new EventHandler(Timer_Tick);
                 timer.Start();
             }
@@ -704,12 +768,14 @@ namespace My_Sync.Classes
         /// </summary>
         /// <param name="item">iteminfo object with the containing values</param>
         /// <param name="serverDescription">needed for gathering the server entry point id</param>
+        /// <param name="syncedDate">last synchronized date if available</param>
         /// <returns>item which was added to the database</returns>
-        private static SynchronizationItem AddToDatabase(ItemInfo item, string serverDescription)
+        private static SynchronizationItem AddToDatabase(ItemInfo item, string serverDescription, string syncedDate = "")
         {
             using (new Logger(item, serverDescription))
             {
                 SynchronizationItem newItem = ItemInfoToSyncItem(item, new SynchronizationItem());
+                newItem.lastSyncTime = syncedDate;
 
                 if (item.FullName != null)
                 {
@@ -721,6 +787,7 @@ namespace My_Sync.Classes
 
                     //make changes in the database
                     sync.synchronizationItemId = DAL.AddSynchronizationItem(newItem);
+                    sync.serverEntryPointId = point.id;
                     if (sync.synchronizationItemId != -1 && !ignoreFromWatching.Contains(Path.Combine(newItem.path, newItem.fullname)))
                         DAL.AddToSync(sync);
                 }
@@ -748,6 +815,7 @@ namespace My_Sync.Classes
                     ToSync sync = new ToSync();
                     sync.syncType = "u";
                     sync.synchronizationItemId = toUpdate.id;
+                    sync.serverEntryPointId = toUpdate.serverEntryPointId;
 
                     //make changes in the database
                     DAL.UpdateSynchronizationItem(toUpdate);
@@ -772,6 +840,7 @@ namespace My_Sync.Classes
                 ToSync sync = new ToSync();
                 sync.syncType = "u";
                 sync.synchronizationItemId = toUpdate.id;
+                sync.serverEntryPointId = toUpdate.serverEntryPointId;
 
                 //make changes in the database
                 DAL.UpdateSynchronizationItem(toUpdate);
@@ -831,6 +900,7 @@ namespace My_Sync.Classes
 
                     ToSync sync = new ToSync();
                     sync.syncType = "d";
+                    sync.serverEntryPointId = toDelete.serverEntryPointId;
                     sync.synchronizationItemId = toDelete.id;
                     DAL.AddToSync(sync);
                 }

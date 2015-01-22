@@ -63,6 +63,7 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="integer" Nullable="false" />
+          <Property Name="serverEntryPointId" Type="decimal" Precision="53" />
           <Property Name="synchronizationItemId" Type="decimal" Precision="53" />
           <Property Name="syncType" Type="nvarchar" />
         </EntityType>
@@ -129,6 +130,7 @@
             <PropertyRef Name="id" />
           </Key>
           <Property Name="id" Type="Int64" Nullable="false" />
+          <Property Name="serverEntryPointId" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="synchronizationItemId" Type="Decimal" Precision="53" Scale="0" />
           <Property Name="syncType" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
         </EntityType>
@@ -192,6 +194,7 @@
             <EntityTypeMapping TypeName="MySyncModel.ToSync">
               <MappingFragment StoreEntitySet="ToSync">
                 <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="serverEntryPointId" ColumnName="serverEntryPointId" />
                 <ScalarProperty Name="synchronizationItemId" ColumnName="synchronizationItemId" />
                 <ScalarProperty Name="syncType" ColumnName="syncType" />
               </MappingFragment>

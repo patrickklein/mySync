@@ -22,7 +22,7 @@
     <system:String x:Key="iconDiskSpace">Der verfügbare Speicherplatz am Server von {0} Mb wurde erreicht.</system:String>
     <system:String x:Key="iconFileSize">{0}: Die erlaubte Dateigröße ({1} Mb) wurde überschritten.</system:String>
     <system:String x:Key="iconSyncFinish">Es wurde(n) {0} Datei(en) bzw. Ordner aktualisiert.</system:String>
-    <system:String x:Key="iconConflict">MySync beenden</system:String>
+    <system:String x:Key="iconConflict">{0} Versionskonflikt(e) aufgetreten.</system:String>
     
     <!-- Tabcontrol Items -->
     <system:String x:Key="tabGeneral">Allgemein</system:String>

@@ -199,21 +199,17 @@ namespace My_Sync.Classes
         /// <summary>
         /// Shows a balloon tip for a conflicted synchronisation
         /// </summary>
-        /// <param name="path">path, where the error occurs</param>
-        /// <param name="errorMessage">related error message from the server</param>
-        public static void ErrorConflict(string path, string errorMessage)
+        /// <param name="count">count of affected fils/folders</param>
+        public static void ErrorConflict(long count)
         {
-            using (new Logger(path, errorMessage))
+            using (new Logger(count))
             {
                 ResourceDictionary dict = mainWindow.Resources.MergedDictionaries.ToList().First();
-                long size = Convert.ToInt64(errorMessage.Split('-').Last().Trim());
 
                 BallonNotifier item = new BallonNotifier();
                 item.notifier = Notifier.CONFLICT;
-                //item.message = String.Format(dict["iconDiskSpace"].ToString(), size / 1000 / 1024);
-                item.icon = ToolTipIcon.Warning;
-                item.path = path;
-                //item.filename = filename;
+                item.message = String.Format(dict["iconConflict"].ToString(), count);
+                item.icon = ToolTipIcon.Error;
                 item.title = dict["iconTitle"].ToString();
 
                 ShowNotification(item);

@@ -660,7 +660,7 @@ namespace My_Sync
                 ServerDGSynchronizationPoints.Columns[2].Width = new DataGridLength(ServerDGSynchronizationPoints.Columns[2].ActualWidth + additionalWidth);
 
                 ServerDGSynchronizationPoints.Columns[3].Header = dict["serverEntryPoint"].ToString();
-                ServerDGSynchronizationPoints.Columns[3].MinWidth = 200;
+                ServerDGSynchronizationPoints.Columns[3].MinWidth = 250;
                 ServerDGSynchronizationPoints.Columns[3].Width = new DataGridLength(ServerDGSynchronizationPoints.Columns[3].ActualWidth + additionalWidth);
             }
         }

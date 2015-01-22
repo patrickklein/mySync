@@ -21,8 +21,8 @@
     <system:String x:Key="iconTitle">mySync notification</system:String>
     <system:String x:Key="iconDiskSpace">The reserved disk space on the server got reached ({0} Mb).</system:String>
     <system:String x:Key="iconFileSize">{0}: The filesize is bigger than allowed ({1} Mb).</system:String>
-    <system:String x:Key="iconSyncFinish">{0} file(s)/folder(s) got synchronized</system:String>
-    <system:String x:Key="iconConflict">MySync beenden</system:String>
+    <system:String x:Key="iconSyncFinish">{0} file(s)/folder(s) got synchronized.</system:String>
+    <system:String x:Key="iconConflict">{0} file(s) got a version conflict.</system:String>
     
     <!-- Tabcontrol Items -->
     <system:String x:Key="tabGeneral">General</system:String>

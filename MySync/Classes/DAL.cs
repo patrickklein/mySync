@@ -127,6 +127,22 @@ namespace My_Sync.Classes
         }
 
         /// <summary>
+        /// Gets all existing ToSync items from the database with the given server entry point id
+        /// </summary>
+        /// <param name="serverEntryPointId"></param>
+        /// <returns>list of toSync items</returns>
+        public static List<ToSync> GetToSync(long serverEntryPointId)
+        {
+            using (new Logger(serverEntryPointId))
+            {
+                using (MySyncEntities dbInstance = new MySyncEntities())
+                {
+                    return dbInstance.ToSync.Where(x => x.serverEntryPointId == serverEntryPointId).ToList();
+                }
+            }
+        }
+
+        /// <summary>
         /// Checks if there is a ToSync item in the database with the given synchronizationItemId
         /// </summary>
         /// <param name="itemId">id of the synchronization item</param>
