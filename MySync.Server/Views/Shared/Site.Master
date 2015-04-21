@@ -1,0 +1,53 @@
+﻿<%@ Master Language="C#" Inherits="System.Web.Mvc.ViewMasterPage" %>
+<!DOCTYPE html>
+<html lang="en">
+    <head runat="server">
+        <meta charset="utf-8" />
+        <title><asp:ContentPlaceHolder ID="TitleContent" runat="server" /></title>
+        <link href="<%: Url.Content("~/favicon.ico") %>" rel="shortcut icon" type="image/x-icon" />
+        <meta name="viewport" content="width=device-width" />
+        <%: Styles.Render("~/Content/css") %>
+        <%: Scripts.Render("~/bundles/modernizr") %>
+    </head>
+    <body>
+        <header>
+            <div class="content-wrapper">
+                <div class="float-left">
+                    <div class="site-title">
+                        <a href="<%: Url.Action("Index", "Home") %>">
+                            <img style="margin-top:14px;margin-left:-2px" height="50" src="<%: Url.Content("~/Images/logo.png") %>" />&nbsp;&nbsp;
+                            <span style="font-family:Dosis;font-size:36pt;color:#fff;vertical-align:top">mySync - Server Management</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="float-right"><br />
+                    <nav>
+                        <ul id="menu">
+                            <li><%: Html.ActionLink("Home", "Index", "Home") %></li>
+                            <!--<li><%: Html.ActionLink("Login", "Login", "Account") %></li>-->
+                            <li><%: Html.ActionLink("Setup", "Setup", "Account") %></li>
+                            <li><%: Html.ActionLink("About", "About", "Home") %></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </header>
+        <div id="body">
+            <asp:ContentPlaceHolder ID="FeaturedContent" runat="server" />
+            <section class="content-wrapper main-content clear-fix">
+                <br />
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </section>
+        </div>
+        <footer>
+            <div class="content-wrapper">
+                <div class="float-left">
+                    <p>&copy; Copyright <%: DateTime.Now.Year %> - Patrick Klein</p>
+                </div>
+            </div>
+        </footer>
+
+        <%: Scripts.Render("~/bundles/jquery") %>
+        <asp:ContentPlaceHolder ID="ScriptsSection" runat="server" />
+    </body>
+</html>
