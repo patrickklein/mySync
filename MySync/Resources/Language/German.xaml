@@ -1,0 +1,82 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib" >
+
+    <system:String x:Key="windowClose">Beenden</system:String>
+    <system:String x:Key="windowMinimize">Minimieren</system:String>
+    <system:String x:Key="windowMaximize">Maximieren</system:String>
+    <system:String x:Key="windowRefresh">Aktualisieren</system:String>
+
+    <system:String x:Key="close">Schließen</system:String>
+    <system:String x:Key="login">Login</system:String>
+    <system:String x:Key="language">Sprache</system:String>
+    <system:String x:Key="german">Deutsch</system:String>
+    <system:String x:Key="english">Englisch</system:String>
+
+    <!-- Notification Icon -->
+    <system:String x:Key="menuSynchronize">Starte Synchronisierung</system:String>
+    <system:String x:Key="menuOpen">Synchronisierungsordner öffnen</system:String>
+    <system:String x:Key="menuSettings">Einstellungen</system:String>
+    <system:String x:Key="menuClose">mySync beenden</system:String>
+    <system:String x:Key="iconTitle">mySync Benachrichtigung</system:String>
+    <system:String x:Key="iconDiskSpace">Der verfügbare Speicherplatz am Server von {0} Mb wurde erreicht.</system:String>
+    <system:String x:Key="iconFileSize">{0}: Die erlaubte Dateigröße ({1} Mb) wurde überschritten.</system:String>
+    <system:String x:Key="iconSyncFinish">Es wurde(n) {0} Datei(en) bzw. Ordner aktualisiert.</system:String>
+    <system:String x:Key="iconConflict">{0} Versionskonflikt(e) aufgetreten.</system:String>
+    
+    <!-- Tabcontrol Items -->
+    <system:String x:Key="tabGeneral">Allgemein</system:String>
+    <system:String x:Key="tabFilter">Dateifilter</system:String>
+    <system:String x:Key="tabAccount">Konto</system:String>
+    <system:String x:Key="tabFolder">Ordner</system:String>
+    <system:String x:Key="tabServer">Server</system:String>
+    <system:String x:Key="tabHistory">Ereignislog</system:String>
+
+    <!-- Tab General -->
+    <system:String x:Key="generalHeaderSystem">System</system:String>
+    <system:String x:Key="generalHeaderSynchronization">Synchronisierung</system:String>
+    <system:String x:Key="generalLanguage">Sprache:</system:String>
+    <system:String x:Key="generalLanguageSystem">Systemsprache</system:String>
+    <system:String x:Key="generalLanguageGerman">Deutsch (de-AT)</system:String>
+    <system:String x:Key="generalLanguageEnglish">Englisch (en-US)</system:String>
+    <system:String x:Key="generalStartup">Starte mySync automatisch beim Systemstart</system:String>
+    <system:String x:Key="generalNotification">Desktop Benachrichtigungen anzeigen</system:String>
+    <system:String x:Key="generalLinks">Link in den Favoriten im Windows Explorer hinzufügen</system:String>
+    <system:String x:Key="generalFastSync">Änderungen sofort synchronisieren</system:String>
+    <system:String x:Key="generalInterval">Intervall:</system:String>
+    <system:String x:Key="generalIntervalMinutes">Minuten</system:String>
+    <system:String x:Key="generalIntervalHours">Stunden</system:String>
+
+    <!-- Tab History -->
+    <system:String x:Key="historyFileUpdate">Die Datei '{0}' wurde am Server '{1}' aktualisiert.</system:String>
+    <system:String x:Key="historyFileDelete">Die Datei '{0}' wurde vom Server '{1}' gelöscht.</system:String>
+    <system:String x:Key="historyFileAdd">Die Datei '{0}' wurde auf den Server '{1}' geladen.</system:String>
+    <system:String x:Key="historyFolderUpdate">Der Ordner '{0}' wurde am Server '{1}' aktualisiert.</system:String>
+    <system:String x:Key="historyFolderDelete">Der Ordner '{0}' wurde vom Server '{1}' gelöscht.</system:String>
+    <system:String x:Key="historyFolderAdd">Der Ordner '{0}' wurde auf den Server '{1}' geladen.</system:String>
+    
+    <!-- Tab Filter -->
+    <system:String x:Key="filterDescription">Dateifilter Definition</system:String>
+    <system:String x:Key="filterAdd">+</system:String>
+    <system:String x:Key="filterDelete">-</system:String>
+
+    <!-- Tab Server -->
+    <system:String x:Key="serverAdd">+</system:String>
+    <system:String x:Key="serverDelete">-</system:String>
+    <system:String x:Key="serverDescription">Beschreibung</system:String>
+    <system:String x:Key="serverFolder">Speicherort</system:String>
+    <system:String x:Key="serverEntryPoint">Server Entry Point</system:String>
+
+    <system:String x:Key="serverPopupTitle">Anlegen eines Synchronisierungspunktes</system:String>
+    <system:String x:Key="serverPopupCreateButton">neuen Synchronisierungspunkt anlegen</system:String>
+    <system:String x:Key="serverPopupBrowserText">Bitte wählen Sie den zu synchronisierenden Ordner aus.</system:String>
+    <system:String x:Key="serverPopupServerType">Server Typ:</system:String>
+    <system:String x:Key="serverPopupDescription">Beschreibung:</system:String>
+    <system:String x:Key="serverPopupDirectory">Ordner:</system:String>
+    <system:String x:Key="serverPopupServerAddress">Server Adresse:</system:String>
+
+    <system:String x:Key="serverPopupTitleDelete">Löschen eines Synchronisierungspunktes</system:String>
+    <system:String x:Key="serverPopupConfirm">Ja</system:String>
+    <system:String x:Key="serverPopupDeny">Nein</system:String>
+    <system:String x:Key="serverPopupConfirmationText">Wollen Sie alle zugehörigen Dateien und Ordner vom Server löschen?</system:String>
+</ResourceDictionary>
